@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "1.0",
+  "pipelineId": "org.valcorza.swin-segmentation",
+  "task": "semantic-segmentation",
+  "architectureSourceOfRecord": {
+    "repository": "microsoft/Swin-Transformer",
+    "officialTaskRepository": "SwinTransformer/Swin-Transformer-Semantic-Segmentation",
+    "referenceImplementationRevision": "d70598c00d37855e404e58415e9aac47340ece02",
+    "referenceRevisionRole": "earliest official task-repo commit containing the canonical Swin segmentation configs; the release asset does not publish a cryptographic source-commit binding",
+    "benchmark": "ADE20K"
+  },
+  "canonicalV1": {
+    "catalogKey": "swin-tiny-upernet-ade20k",
+    "backbone": "Swin-T",
+    "head": "UPerNet",
+    "configPath": "configs/swin/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k.py",
+    "configBlobSha": "aae70e2aff0114989954574f0c59478489d94154",
+    "releaseRepository": "SwinTransformer/storage",
+    "releaseTag": "v1.0.1",
+    "releaseAssetId": 34862982,
+    "checkpointFile": "upernet_swin_tiny_patch4_window7_512x512.pth",
+    "checkpointSizeBytes": 240144566,
+    "checkpointSha256": null,
+    "checkpointDigestStatus": "PENDING_LOCAL_HASH_OF_OFFICIAL_RELEASE_ASSET",
+    "reportedMetrics": {
+      "mIoU": 44.51,
+      "mIoUMultiScaleFlip": 45.81
+    },
+    "status": "REFERENCE_CONFIG_PINNED_DIGEST_PENDING"
+  },
+  "policy": {
+    "officialReleaseIsSourceOfRecord": true,
+    "releaseAssetPublishesSourceCommitBinding": false,
+    "convenienceMirrorMayReplaceSourceOfRecord": false,
+    "runtimeNetworkFetch": "DENY",
+    "offCatalogSelection": "REFUSE",
+    "requireCheckpointSha256BeforeQualification": true
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "1.0",
+  "pipelineId": "org.valcorza.swin-segmentation",
+  "repository": "kurtvalcorza/swin-segmentation-pipeline",
+  "status": "BLOCKED_PENDING_CONTRACT_AND_WORKERS",
+  "upstream": {
+    "task": "Semantic Segmentation",
+    "benchmark": "ADE20K",
+    "referenceArchitecture": "Swin-T + UPerNet"
+  },
+  "contract": {
+    "reviewedBranch": "build/dimer-v1-freeze",
+    "candidateTaskProfile": "core.task.vision.semantic-segmentation",
+    "taskProfileStatus": "NOT_PRESENT_ON_REVIEWED_BRANCH",
+    "candidateDatasetRepresentation": "core.dataset.vision.raster-mask",
+    "datasetRepresentationStatus": "NOT_PRESENT_ON_REVIEWED_BRANCH",
+    "trainingMethod": "core.training.supervised-finetuning"
+  },
+  "taskBoundary": {
+    "input": "image",
+    "target": "per-pixel semantic class mask",
+    "instanceSegmentation": "OUT_OF_SCOPE"
+  },
+  "metrics": [
+    "mIoU",
+    "per-class IoU"
+  ],
+  "model": {
+    "catalogMode": "ALLOWLISTED_DIGEST_PINNED",
+    "canonicalV1": "swin-tiny-upernet-ade20k",
+    "runtimeNetworkFetch": "DENY",
+    "offCatalogSelection": "REFUSE"
+  },
+  "expectedComponents": {
+    "validator": "kurtvalcorza/swin-segmentation-dataset-validator",
+    "finetuner": "kurtvalcorza/swin-segmentation-finetuner"
+  },
+  "composition": {
+    "manifestStatus": "NOT_EMITTED",
+    "releaseStatus": "NOT_EMITTED",
+    "reason": "A contract-valid pipeline manifest must not be emitted until the semantic-segmentation task, raster-mask representation, validator release, and finetuner release exist."
+  },
+  "blockers": [
+    "CONTRACT_SEMANTIC_SEGMENTATION_TASK_PROFILE_MISSING",
+    "CONTRACT_RASTER_MASK_REPRESENTATION_MISSING",
+    "VALIDATOR_WORKER_RELEASE_MISSING",
+    "FINETUNER_WORKER_RELEASE_MISSING",
+    "CHECKPOINT_SHA256_PENDING",
+    "ACCELERATOR_QUALIFICATION_PENDING"
+  ]
+}
