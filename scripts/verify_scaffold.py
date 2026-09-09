@@ -48,8 +48,8 @@ def main() -> int:
         errors.append(f"missing blockers: {missing}")
 
     source = provenance.get("architectureSourceOfRecord", {})
-    if not HEX40.fullmatch(source.get("sourceRevision", "")):
-        errors.append("source revision is not an immutable 40-hex commit")
+    if not HEX40.fullmatch(source.get("referenceImplementationRevision", "")):
+        errors.append("reference implementation revision is not an immutable 40-hex commit")
 
     model = provenance.get("canonicalV1", {})
     if not HEX40.fullmatch(model.get("configBlobSha", "")):
@@ -59,8 +59,12 @@ def main() -> int:
         errors.append("checkpointSha256 must be null or 64 lowercase hex characters")
     if digest is None and model.get("status") == "QUALIFIED":
         errors.append("checkpoint cannot be QUALIFIED without SHA-256")
-    if provenance.get("policy", {}).get("runtimeNetworkFetch") != "DENY":
+
+    policy = provenance.get("policy", {})
+    if policy.get("runtimeNetworkFetch") != "DENY":
         errors.append("runtime network fetch must be denied")
+    if policy.get("releaseAssetPublishesSourceCommitBinding") is not False:
+        errors.append("release/source commit binding must not be claimed unless upstream publishes one")
 
     if errors:
         for error in errors:
