@@ -5,7 +5,8 @@
   "architectureSourceOfRecord": {
     "repository": "microsoft/Swin-Transformer",
     "officialTaskRepository": "SwinTransformer/Swin-Transformer-Semantic-Segmentation",
-    "sourceRevision": "87e6f90577435c94f3e92c7db1d36edc234d91f6",
+    "referenceImplementationRevision": "d70598c00d37855e404e58415e9aac47340ece02",
+    "referenceRevisionRole": "earliest official task-repo commit containing the canonical Swin segmentation configs; the release asset does not publish a cryptographic source-commit binding",
     "benchmark": "ADE20K"
   },
   "canonicalV1": {
@@ -25,10 +26,11 @@
       "mIoU": 44.51,
       "mIoUMultiScaleFlip": 45.81
     },
-    "status": "SOURCE_PINNED_DIGEST_PENDING"
+    "status": "REFERENCE_CONFIG_PINNED_DIGEST_PENDING"
   },
   "policy": {
     "officialReleaseIsSourceOfRecord": true,
+    "releaseAssetPublishesSourceCommitBinding": false,
     "convenienceMirrorMayReplaceSourceOfRecord": false,
     "runtimeNetworkFetch": "DENY",
     "offCatalogSelection": "REFUSE",
