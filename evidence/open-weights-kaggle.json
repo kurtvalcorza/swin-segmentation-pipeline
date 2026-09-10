@@ -1,0 +1,49 @@
+{
+  "schemaVersion": "1.0",
+  "pipelineId": "org.valcorza.swin-segmentation",
+  "task": "semantic-segmentation",
+  "verificationTarget": {
+    "repository": "kurtvalcorza/swin-segmentation-pipeline",
+    "targetCommit": "92813c4c2b0df3eb741d0dde2c06d65424d785ac",
+    "targetBranch": "main"
+  },
+  "executionEnvironment": {
+    "platform": "kaggle-cloud",
+    "kernelSlug": "kurtvalcorza/swin-segmentation-verify",
+    "kernelUrl": "https://www.kaggle.com/code/kurtvalcorza/swin-segmentation-verify",
+    "os": "Linux-6.12.90+-x86_64",
+    "python": "3.12.13",
+    "cpu": "Intel Xeon",
+    "vCPUs": 4,
+    "memoryGB": 30,
+    "executedAt": "2026-09-10T04:22:15Z"
+  },
+  "releaseAsset": {
+    "repository": "SwinTransformer/storage",
+    "tag": "v1.0.1",
+    "assetId": 34862982,
+    "url": "https://github.com/SwinTransformer/storage/releases/download/v1.0.1/upernet_swin_tiny_patch4_window7_512x512.pth",
+    "filename": "upernet_swin_tiny_patch4_window7_512x512.pth",
+    "expectedSizeBytes": 240144566,
+    "observedSizeBytes": 240144566,
+    "sizeMatch": true,
+    "sha256": "c26408bb5ddee935dcc709ad7815fa039f2db2b41134cd702da7da277d1a7d89",
+    "downloadTimeSeconds": 16.72
+  },
+  "deserializationSummary": {
+    "loader": "torch.load(map_location='cpu')",
+    "deserializationOk": true,
+    "totalTensors": 271,
+    "totalParameters": 59983487,
+    "backboneTensors": 189,
+    "decodeHeadTensors": 74,
+    "inspectionTimeSeconds": 0.24
+  },
+  "scaffoldVerification": {
+    "command": "python scripts/verify_scaffold.py",
+    "exitCode": 0,
+    "output": "PASS  segmentation scaffold is internally consistent and fail-closed",
+    "wallSeconds": 0.17
+  },
+  "overallStatus": "PASSED"
+}
