@@ -41,7 +41,6 @@ def main() -> int:
         "CONTRACT_RASTER_MASK_REPRESENTATION_MISSING",
         "VALIDATOR_WORKER_RELEASE_MISSING",
         "FINETUNER_WORKER_RELEASE_MISSING",
-        "CHECKPOINT_SHA256_PENDING",
     }
     missing = sorted(required_blockers - blockers)
     if missing:
@@ -55,10 +54,18 @@ def main() -> int:
     if not HEX40.fullmatch(model.get("configBlobSha", "")):
         errors.append("config blob sha is not a 40-hex git object id")
     digest = model.get("checkpointSha256")
-    if digest is not None and not HEX64.fullmatch(digest):
-        errors.append("checkpointSha256 must be null or 64 lowercase hex characters")
-    if digest is None and model.get("status") == "QUALIFIED":
-        errors.append("checkpoint cannot be QUALIFIED without SHA-256")
+    if not digest or not HEX64.fullmatch(digest):
+        errors.append("checkpointSha256 must be a verified 64 lowercase hex characters digest")
+
+    evidence_path = ROOT / "evidence" / "open-weights-kaggle.json"
+    if not evidence_path.is_file():
+        errors.append("missing evidence/open-weights-kaggle.json")
+    else:
+        evidence = load(evidence_path)
+        if evidence.get("releaseAsset", {}).get("sha256") != digest:
+            errors.append("evidence sha256 does not match provenance checkpointSha256")
+        if evidence.get("releaseAsset", {}).get("observedSizeBytes") != model.get("checkpointSizeBytes"):
+            errors.append("evidence observedSizeBytes does not match provenance checkpointSizeBytes")
 
     policy = provenance.get("policy", {})
     if policy.get("runtimeNetworkFetch") != "DENY":
