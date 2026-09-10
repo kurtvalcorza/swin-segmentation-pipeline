@@ -20,13 +20,13 @@
     "releaseAssetId": 34862982,
     "checkpointFile": "upernet_swin_tiny_patch4_window7_512x512.pth",
     "checkpointSizeBytes": 240144566,
-    "checkpointSha256": null,
-    "checkpointDigestStatus": "PENDING_LOCAL_HASH_OF_OFFICIAL_RELEASE_ASSET",
+    "checkpointSha256": "c26408bb5ddee935dcc709ad7815fa039f2db2b41134cd702da7da277d1a7d89",
+    "checkpointDigestStatus": "VERIFIED_OFFICIAL_RELEASE_ASSET_HASH",
     "reportedMetrics": {
       "mIoU": 44.51,
       "mIoUMultiScaleFlip": 45.81
     },
-    "status": "REFERENCE_CONFIG_PINNED_DIGEST_PENDING"
+    "status": "REFERENCE_CONFIG_PINNED_DIGEST_VERIFIED"
   },
   "policy": {
     "officialReleaseIsSourceOfRecord": true,
