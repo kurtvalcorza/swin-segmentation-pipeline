@@ -4,7 +4,7 @@ Notebook specification: **DIMER Notebook Specification 1.0**
 
 | Notebook | Profile | Capability | Default runtime | BYOD | Release status |
 |---|---|---|---|---|---|
-| `swin_segmentation_task_inference.ipynb` | `TASK-INFERENCE` | Verified pretrained Swin-T + UPerNet semantic segmentation; ADE20K tutorial mIoU/per-class IoU; machine-readable masks/metrics/provenance | CPU / CPython 3.10 Jupyter | Optional image, gated off by default | **Candidate** — real task runtime implemented; promote only after exact-revision clean notebook execution passes |
+| `swin_segmentation_task_inference.ipynb` | `TASK-INFERENCE` | Verified pretrained Swin-T + UPerNet semantic segmentation; ADE20K tutorial mIoU/per-class IoU; machine-readable masks/metrics/provenance | CPU / CPython 3.10 Jupyter | Optional image, gated off by default | **release-grade** — exact committed notebook passed clean GitHub-hosted execution on 2026-09-11 |
 | `swin_segmentation_scaffold_smoke_colab.ipynb` | `SMOKE` | Scaffold lifecycle/model-card/provenance checks | CPU / Python 3.11+ | — | **Engineering-only** |
 
 ## Supported user-facing capability
@@ -27,6 +27,22 @@ The notebook writes semantic-mask PNGs, `predictions.json`, `metrics.json`, `per
 
 ## Release verification
 
-`.github/workflows/verify-task-tutorial.yml` is the promotion gate for `swin_segmentation_task_inference.ipynb`. It must execute the **committed notebook** top-to-bottom from a fresh Python 3.10 Jupyter environment, exercise the repository API, download and verify the model, evaluate the fixed labelled sample, and assert the machine-readable outputs. Static JSON/compile checks are kept separate from execution evidence.
+Clean execution evidence for the committed `TASK-INFERENCE` notebook:
 
-The older `verify-smoke-notebook.yml` remains useful engineering coverage but is not evidence for the task tutorial.
+- **Date:** 2026-09-11 UTC
+- **PR head tested:** `21bb78bfe2c53820490042b0523ee5dd0c7becd1`
+- **GitHub Actions run:** `verify-task-tutorial` run `34575117856`, conclusion **success**
+- **Environment:** GitHub-hosted Ubuntu 24.04.5, CPython 3.10.21; CPU runtime
+- **Effective model stack:** torch 2.1.2+cpu; MMSegmentation 1.2.2; MMCV 2.1.0; MMEngine 0.10.7; NumPy 1.26.4; OpenCV 4.10.0.84
+- **Checkpoint:** 240,154,742 bytes; SHA-256 `e380ad3e5d94060d89e4b62b5d393cdcc7f1f3406b1d46bcab547d3c276b6064`; verified before loading
+- **Default sample:** two immutable ADE20K validation fixtures, 510,803 valid labelled pixels
+- **Tutorial metrics observed:** aggregate sample mIoU `0.3869899942`; pixel accuracy `0.7065385286`; 11 classes with non-zero union; constant-majority (`sky`) sample baseline mIoU `0.0539564666`
+- **Exports asserted:** two semantic-mask PNGs, `predictions.json`, `metrics.json`, `per-class-iou.csv`, `provenance.json`
+
+The registry promotion in this commit changes documentation only; the notebook bytes exercised by the recorded run are unchanged. `.github/workflows/verify-task-tutorial.yml` remains the regression gate and re-executes the committed notebook whenever the notebook, runtime, registry, or workflow changes.
+
+Static JSON/compile checks are not treated as execution evidence. The older `verify-smoke-notebook.yml` remains useful engineering coverage but is not evidence for the task tutorial.
+
+## Recorded SHOULD deviation
+
+**G16 / model-card link:** the current `MODEL_CARD.md` is a scaffold-lifecycle card written for the future gradient-adaptation pipeline and still describes that capability as having no runtime. The task-inference tutorial deliberately does not present that card as documentation for the newly implemented pretrained inference surface. This is a documentation follow-up, not a `TASK-INFERENCE` execution blocker; until the model card is revised, this registry, `spec/task-inference-surface.json`, and the runtime `MODEL_SPEC` are the durable sources for the supported inference capability and exact checkpoint identity.
