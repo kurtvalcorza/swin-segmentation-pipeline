@@ -40,6 +40,12 @@ authoritative upstream weight-licence determination is recorded (LIC2/LIC7).
 `scripts/verify_scaffold.py` refuses any lifecycle above `scaffold` while blockers exist, any
 declared components/release, and any non-blocked hosting for an `unknown`/`prohibited` status.
 
+`MODEL_CARD.md` (DIMER Model Card Specification 1.0) is a **scaffold-lifecycle card**: it states
+the intended model, boundaries, factors, metrics, risks and prohibited uses, records that this
+repository measures nothing and distributes no weights, and lists only the mitigations that
+actually exist here (provenance pinning, fail-closed lifecycle, hosting gate, no `.pth`
+deserialisation).
+
 Repository-owned build artifacts:
 
 - `spec/pipeline-surface.json` — machine-readable task/model/contract surface and blockers;
