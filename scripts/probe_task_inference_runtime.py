@@ -48,7 +48,9 @@ assert digest == "e380ad3e5d94060d89e4b62b5d393cdcc7f1f3406b1d46bcab547d3c276b60
 
 inferencer = MMSegInferencer(model=str(config), weights=str(checkpoint), device="cpu")
 result = inferencer(str(sample), return_datasamples=True)
-pred = result["predictions"]
+pred = result
+if isinstance(pred, dict):
+    pred = pred["predictions"]
 if isinstance(pred, (list, tuple)):
     pred = pred[0]
 mask = pred.pred_sem_seg.data.squeeze(0)
