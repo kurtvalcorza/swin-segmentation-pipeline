@@ -26,7 +26,18 @@
       "mIoU": 44.51,
       "mIoUMultiScaleFlip": 45.81
     },
-    "status": "REFERENCE_CONFIG_PINNED_DIGEST_VERIFIED"
+    "status": "REFERENCE_CONFIG_PINNED_DIGEST_VERIFIED",
+    "weightLicensing": {
+      "redistribution_status": "unknown",
+      "license": null,
+      "license_source": null,
+      "dimer_hosting": "BLOCKED",
+      "review": {
+        "date": "2026-09-11",
+        "reviewer": "kurtvalcorza",
+        "determination": "Not yet determined from an authoritative upstream statement. The official release asset is published under SwinTransformer/storage@v1.0.1 without a licence file; the task repository SwinTransformer/Swin-Transformer-Semantic-Segmentation carries its own code licence, which does not by itself govern the weight bytes (Pipeline Spec LIC10); and the training dataset terms have not been assessed. `unknown` fails the DIMER hosting gate (LIC7) until resolved."
+      }
+    }
   },
   "policy": {
     "officialReleaseIsSourceOfRecord": true,

@@ -67,6 +67,46 @@ def main() -> int:
         if evidence.get("releaseAsset", {}).get("observedSizeBytes") != model.get("checkpointSizeBytes"):
             errors.append("evidence observedSizeBytes does not match provenance checkpointSizeBytes")
 
+    # DIMER Pipeline Specification 1.0 lifecycle / topology / capability metadata (GEN8, GEN15, DOC13/14).
+    spec_meta = surface.get("dimerPipelineSpec", {})
+    if spec_meta.get("pipeline_spec") != "1.0":
+        errors.append("dimerPipelineSpec.pipeline_spec must be '1.0'")
+    if spec_meta.get("lifecycle_status") != "scaffold":
+        errors.append("lifecycle_status must remain 'scaffold' while blockers exist; promotion is not a field edit")
+    if blockers and spec_meta.get("lifecycle_status") in ("candidate", "release"):
+        errors.append("a repository with open blockers cannot be candidate or release")
+    if spec_meta.get("implementation_topology") not in ("PACKAGE", "COMPOSED-WORKERS"):
+        errors.append("implementation_topology must be PACKAGE or COMPOSED-WORKERS")
+    modes = spec_meta.get("capability_modes") or []
+    allowed_modes = {"GRADIENT-ADAPTATION", "CONTEXT-CONDITIONING", "PRETRAINED-INFERENCE", "MULTI-CAPABILITY-INFERENCE"}
+    if not modes or not set(modes) <= allowed_modes:
+        errors.append("capability_modes must be a non-empty subset of the Pipeline Spec modes")
+    for forbidden in ("components", "release"):
+        if forbidden in surface:
+            errors.append(f"a scaffold must not declare {forbidden!r}")
+    composition = surface.get("composition", {})
+    if composition.get("manifestStatus") != "NOT_EMITTED" or composition.get("releaseStatus") != "NOT_EMITTED":
+        errors.append("a scaffold must record composition manifest/release as NOT_EMITTED")
+
+    # Weight licensing / redistribution gate (LIC4, LIC6, LIC7): unknown or prohibited blocks DIMER hosting.
+    licensing = model.get("weightLicensing", {})
+    status = licensing.get("redistribution_status")
+    if status not in ("permitted", "conditional", "prohibited", "unknown"):
+        errors.append("weightLicensing.redistribution_status must be permitted|conditional|prohibited|unknown")
+    hosting = licensing.get("dimer_hosting")
+    if status == "permitted":
+        if not licensing.get("license") or not licensing.get("license_source"):
+            errors.append("permitted redistribution requires license and license_source")
+    elif status == "conditional":
+        if hosting != "BLOCKED" and not licensing.get("condition_satisfied"):
+            errors.append("conditional redistribution must keep dimer_hosting BLOCKED until condition_satisfied is recorded")
+    else:
+        if hosting != "BLOCKED":
+            errors.append(f"redistribution_status {status!r} requires dimer_hosting BLOCKED")
+    review = licensing.get("review", {})
+    if not all(review.get(k) for k in ("date", "reviewer", "determination")):
+        errors.append("weightLicensing.review needs date, reviewer and determination")
+
     policy = provenance.get("policy", {})
     if policy.get("runtimeNetworkFetch") != "DENY":
         errors.append("runtime network fetch must be denied")
