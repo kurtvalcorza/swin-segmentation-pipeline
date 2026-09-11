@@ -31,6 +31,15 @@ executable, fail-closed scaffold. It deliberately does **not** emit a
 a raster-mask representation profile, and the task-specific validator and
 finetuner releases do not yet exist.
 
+**Lifecycle (DIMER Pipeline Specification 1.0):** `scaffold` — declared machine-readably in
+`spec/pipeline-surface.json` (`dimerPipelineSpec`: `lifecycle_status`, intended
+`implementation_topology` `COMPOSED-WORKERS`, `capability_modes` `GRADIENT-ADAPTATION`). The
+canonical checkpoint `upernet_swin_tiny_patch4_window7_512x512.pth` carries `redistribution_status: unknown` in
+`provenance/open-weights.json` (`weightLicensing`), so DIMER hosting is **BLOCKED** until an
+authoritative upstream weight-licence determination is recorded (LIC2/LIC7).
+`scripts/verify_scaffold.py` refuses any lifecycle above `scaffold` while blockers exist, any
+declared components/release, and any non-blocked hosting for an `unknown`/`prohibited` status.
+
 Repository-owned build artifacts:
 
 - `spec/pipeline-surface.json` — machine-readable task/model/contract surface and blockers;

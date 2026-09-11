@@ -3,6 +3,15 @@
   "pipelineId": "org.valcorza.swin-segmentation",
   "repository": "kurtvalcorza/swin-segmentation-pipeline",
   "status": "BLOCKED_PENDING_CONTRACT_AND_WORKERS",
+  "dimerPipelineSpec": {
+    "pipeline_spec": "1.0",
+    "lifecycle_status": "scaffold",
+    "implementation_topology": "COMPOSED-WORKERS",
+    "capability_modes": [
+      "GRADIENT-ADAPTATION"
+    ],
+    "note": "Intended production architecture (validator + finetuner workers on the ml-worker contract), mirroring swin-classification-pipeline. A scaffold declares intent only: no component identities, composition or release are emitted, and the lifecycle must not advance until the blockers list is empty."
+  },
   "upstream": {
     "task": "Semantic Segmentation",
     "benchmark": "ADE20K",
