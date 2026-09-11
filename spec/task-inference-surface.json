@@ -1,0 +1,65 @@
+{
+  "schemaVersion": "1.0",
+  "pipelineId": "org.valcorza.swin-segmentation",
+  "capabilityProfile": "TASK-INFERENCE",
+  "capabilityStatus": "IMPLEMENTED",
+  "trainingOrAdaptation": "NONE",
+  "runtime": {
+    "package": "dimer-swin-segmentation",
+    "version": "0.1.0",
+    "python": ">=3.10,<3.11",
+    "publicApi": "dimer_swin_segmentation.DimerSwinSegmenter",
+    "cli": "dimer-swin-segment",
+    "defaultDevice": "cpu",
+    "framework": {
+      "torch": "2.1.2",
+      "mmsegmentation": "1.2.2",
+      "mmcv": "2.1.0",
+      "mmengine": "0.10.7",
+      "numpy": "1.26.4",
+      "opencvPython": "4.10.0.84"
+    }
+  },
+  "model": {
+    "architecture": "Swin-T + UPerNet",
+    "task": "semantic-segmentation",
+    "pretrainingAndBenchmarkDomain": "ADE20K",
+    "distribution": "OpenMMLab MMSegmentation 1.2.2",
+    "config": "swin/swin-tiny-patch4-window7-in1k-pre_upernet_8xb2-160k_ade20k-512x512.py",
+    "configSourceRevision": "open-mmlab/mmsegmentation@v1.2.2",
+    "checkpointUrl": "https://download.openmmlab.com/mmsegmentation/v0.5/swin/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth",
+    "checkpointSizeBytes": 240154742,
+    "checkpointSha256": "e380ad3e5d94060d89e4b62b5d393cdcc7f1f3406b1d46bcab547d3c276b6064",
+    "checkpointVerification": "REQUIRED_BEFORE_DESERIALIZATION",
+    "numClasses": 150
+  },
+  "input": {
+    "modality": "RGB-compatible image",
+    "validation": "Pillow decode/verify; positive dimensions; maximum 64,000,000 pixels",
+    "byod": true
+  },
+  "output": {
+    "unit": "pixel",
+    "format": "2-D uint8 semantic class-index raster",
+    "classIndexRange": "0..149",
+    "uncertainty": "no calibrated per-pixel uncertainty exported"
+  },
+  "evaluation": {
+    "metrics": ["mIoU", "per-class IoU", "pixel accuracy"],
+    "releaseTutorial": "tutorials/swin_segmentation_task_inference.ipynb",
+    "notebookProfile": "TASK-INFERENCE",
+    "defaultSample": "two immutable ADE20K validation fixtures at hf-internal-testing/fixtures_ade20k@850d349e5038f291284e7999fcacbedc0922534b",
+    "labelConvention": "raw ADE20K 0 is ignored; raw 1..150 maps to model indices 0..149 (reduce_zero_label=True)",
+    "sampleEvidenceOnly": true
+  },
+  "security": {
+    "checkpointSerialization": "PyTorch .pth; code-capable serialization",
+    "digestMeaning": "byte identity only; not publisher authenticity",
+    "runtimeSecretsRequired": false
+  },
+  "relationToGradientAdaptationSurface": {
+    "surface": "spec/pipeline-surface.json",
+    "status": "BLOCKED_PENDING_CONTRACT_AND_WORKERS",
+    "note": "The implemented pretrained TASK-INFERENCE runtime does not implement, satisfy, or remove blockers for the future composed-worker gradient-adaptation pipeline."
+  }
+}
