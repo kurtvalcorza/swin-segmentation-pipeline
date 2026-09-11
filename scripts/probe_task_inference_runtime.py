@@ -43,10 +43,14 @@ print(json.dumps({
     "checkpoint_bytes": checkpoint.stat().st_size,
     "checkpoint_sha256": digest,
 }, indent=2))
+assert checkpoint.stat().st_size == 240154742
+assert digest == "e380ad3e5d94060d89e4b62b5d393cdcc7f1f3406b1d46bcab547d3c276b6064"
 
 inferencer = MMSegInferencer(model=str(config), weights=str(checkpoint), device="cpu")
 result = inferencer(str(sample), return_datasamples=True)
-pred = result["predictions"][0]
+pred = result["predictions"]
+if isinstance(pred, (list, tuple)):
+    pred = pred[0]
 mask = pred.pred_sem_seg.data.squeeze(0)
 print(json.dumps({
     "prediction_shape": list(mask.shape),
