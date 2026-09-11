@@ -21,7 +21,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install notebook executor
-        run: python -m pip install --disable-pip-version-check "nbconvert==7.16.6" "nbformat==5.10.4"
+        run: python -m pip install --disable-pip-version-check "nbconvert==7.16.6" "nbformat==5.10.4" "ipykernel==6.29.5"
+      - name: Register Python kernel
+        run: python -m ipykernel install --user --name python3 --display-name "Python 3"
       - name: Validate notebook source hygiene
         run: |
           python - <<'PY'
