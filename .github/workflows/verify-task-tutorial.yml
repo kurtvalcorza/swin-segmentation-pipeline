@@ -1,0 +1,74 @@
+name: verify-task-tutorial
+
+on:
+  pull_request:
+    paths:
+      - "tutorials/swin_segmentation_task_inference.ipynb"
+      - "tutorials/README.md"
+      - "src/dimer_swin_segmentation/**"
+      - "pyproject.toml"
+      - ".github/workflows/verify-task-tutorial.yml"
+  workflow_dispatch:
+
+jobs:
+  execute-task-tutorial:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Install notebook executor
+        run: |
+          python -m pip install --disable-pip-version-check "nbconvert==7.16.6" "nbformat==5.10.4" "ipykernel==6.29.5"
+          python -m ipykernel install --user --name python3 --display-name "Python 3"
+      - name: Validate notebook source
+        run: |
+          python - <<'PY'
+          import ast, json
+          from pathlib import Path
+          p=Path('tutorials/swin_segmentation_task_inference.ipynb')
+          nb=json.loads(p.read_text())
+          assert nb['metadata']['dimer']=={'notebook_profile':'TASK-INFERENCE','notebook_spec':'1.0'}
+          text=p.read_text()
+          for marker in ('TODO','TBD','FIXME'):
+              assert marker not in text
+          for cell in nb['cells']:
+              assert cell.get('id')
+              if cell['cell_type']=='code':
+                  ast.parse(''.join(cell['source']))
+                  assert cell.get('execution_count') is None
+                  assert cell.get('outputs')==[]
+          print('TASK-INFERENCE notebook source: PASS')
+          PY
+      - name: Execute exact task tutorial
+        env:
+          DIMER_TUTORIAL_WORKSPACE: ${{ runner.temp }}/dimer-swin-segmentation-tutorial
+        run: |
+          python -m nbconvert --to notebook --execute tutorials/swin_segmentation_task_inference.ipynb \
+            --output task-inference-executed.ipynb --output-dir "$RUNNER_TEMP" \
+            --ExecutePreprocessor.timeout=1500
+      - name: Assert machine-readable outputs
+        env:
+          DIMER_TUTORIAL_WORKSPACE: ${{ runner.temp }}/dimer-swin-segmentation-tutorial
+        run: |
+          test -s "$DIMER_TUTORIAL_WORKSPACE/outputs/predictions.json"
+          test -s "$DIMER_TUTORIAL_WORKSPACE/outputs/metrics.json"
+          test -s "$DIMER_TUTORIAL_WORKSPACE/outputs/per-class-iou.csv"
+          test -s "$DIMER_TUTORIAL_WORKSPACE/outputs/provenance.json"
+          test -s "$DIMER_TUTORIAL_WORKSPACE/outputs/ADE_val_00000001.semantic.png"
+          test -s "$DIMER_TUTORIAL_WORKSPACE/outputs/ADE_val_00000002.semantic.png"
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          root=Path(os.environ['DIMER_TUTORIAL_WORKSPACE'])/'outputs'
+          m=json.loads((root/'metrics.json').read_text())
+          p=json.loads((root/'provenance.json').read_text())
+          assert m['num_images']==2
+          assert m['valid_pixels'] > 0
+          assert m['classes_with_union'] > 0
+          assert 0.0 <= m['miou'] <= 1.0
+          assert p['effective']['checkpoint_sha256']=='e380ad3e5d94060d89e4b62b5d393cdcc7f1f3406b1d46bcab547d3c276b6064'
+          print(json.dumps({'metrics':m,'checkpointVerified':True}, indent=2))
+          PY
