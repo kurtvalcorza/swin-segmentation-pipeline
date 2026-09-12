@@ -1,5 +1,15 @@
 # Tutorials
 
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=flat&logo=github&logoColor=white)](https://github.com/kurtvalcorza/swin-segmentation-pipeline)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kurtvalcorza/swin-segmentation-pipeline/blob/main/tutorials/swin_segmentation_task_inference.ipynb)
+[![Python 3.10 required](https://img.shields.io/badge/Python-3.10%20required-3776ab?style=flat&logo=python&logoColor=white)](../README.md)
+[![Checkpoint](https://img.shields.io/badge/Checkpoint-upernet__swin__tiny__patch4__window7__512x512-ffcc4d?style=flat)](https://github.com/SwinTransformer/storage/releases/tag/v1.0.1)
+[![Upstream](https://img.shields.io/badge/Upstream-microsoft%2FSwin--Transformer-181717?style=flat&logo=github&logoColor=white)](https://github.com/microsoft/Swin-Transformer)
+[![arXiv](https://img.shields.io/badge/arXiv-2103.14030-b31b1b.svg)](https://arxiv.org/abs/2103.14030)
+[![Model released](https://img.shields.io/badge/Model%20released-2021--04--12-6f42c1?style=flat)](https://github.com/SwinTransformer/storage/releases/tag/v1.0.1)
+[![Sample eval](https://img.shields.io/badge/Sample%20eval-mIoU%200.387%20%7C%20pixel%20acc%200.707-2ea44f?style=flat)](../MODEL_CARD.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](../LICENSE)
+
 Notebook specification: **DIMER Notebook Specification 1.0**
 
 | Notebook | Profile | Capability | Default runtime | BYOD | Release status |

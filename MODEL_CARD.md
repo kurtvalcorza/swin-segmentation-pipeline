@@ -17,6 +17,17 @@ task_inference_surface: spec/task-inference-surface.json
 
 # Swin Semantic Segmentation Pipeline (org.valcorza.swin-segmentation) — release-grade pretrained inference; gradient adaptation scaffold
 
+[![GitHub](https://img.shields.io/badge/GitHub-kurtvalcorza%2Fswin-segmentation-pipeline-181717?style=flat&logo=github&logoColor=white)](https://github.com/kurtvalcorza/swin-segmentation-pipeline)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kurtvalcorza/swin-segmentation-pipeline/blob/main/tutorials/swin_segmentation_task_inference.ipynb)
+[![Python 3.10 required](https://img.shields.io/badge/Python-3.10%20required-3776ab?style=flat&logo=python&logoColor=white)](README.md)
+[![Checkpoint](https://img.shields.io/badge/Checkpoint-upernet__swin__tiny__patch4__window7__512x512-ffcc4d?style=flat)](spec/task-inference-surface.json)
+[![Upstream](https://img.shields.io/badge/Upstream-microsoft%2FSwin--Transformer-181717?style=flat&logo=github&logoColor=white)](https://github.com/microsoft/Swin-Transformer)
+[![arXiv](https://img.shields.io/badge/arXiv-2103.14030-b31b1b.svg)](https://arxiv.org/abs/2103.14030)
+[![Model released](https://img.shields.io/badge/Model%20released-2021--04--12-6f42c1?style=flat)](https://github.com/SwinTransformer/storage/releases/tag/v1.0.1)
+[![Sample eval](https://img.shields.io/badge/Sample%20eval-mIoU%200.387%20%7C%20pixel%20acc%200.707-2ea44f?style=flat)](tutorials/README.md)
+[![License: MIT](https://img.shields.io/badge/Code%20license-MIT-yellow.svg)](LICENSE)
+[![Weights license](https://img.shields.io/badge/Weights%20license-unknown%20%E2%80%94%20hosting%20blocked-lightgrey?style=flat)](provenance/open-weights.json)
+
 ###### Description
 
 This repository has **two separate capability surfaces**. It now ships an implemented pretrained `TASK-INFERENCE` runtime for Swin-T + UPerNet through `dimer_swin_segmentation.DimerSwinSegmenter`, the `dimer-swin-segment` CLI, `spec/task-inference-surface.json`, and `tutorials/swin_segmentation_task_inference.ipynb`. The runtime uses the pinned OpenMMLab MMSegmentation 1.2.2 distribution, verifies exact checkpoint size and SHA-256 before deserialization, validates input images, and emits a two-dimensional semantic class-index mask over the 150 ADE20K classes. Separately, the intended composed-worker `GRADIENT-ADAPTATION` pipeline remains a DIMER Pipeline Specification 1.0 `scaffold`: the DIMER semantic-segmentation task profile, raster-mask representation, validator/finetuner worker releases, accelerator qualification, composition and release manifest are not yet implemented. The `lifecycle_status: scaffold` front matter refers to that adaptation composition and must not be read as denying the existence of the qualified pretrained inference runtime.
