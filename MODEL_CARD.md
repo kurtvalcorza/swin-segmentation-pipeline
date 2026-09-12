@@ -1,6 +1,6 @@
 ---
 license: mit
-model_card_spec: "1.0"
+model_card_spec: "1.1"
 pipeline_spec: "1.0"
 base_model: SwinTransformer/storage upernet_swin_tiny_patch4_window7_512x512.pth (release v1.0.1, asset 34862982)
 base_model_sha256: c26408bb5ddee935dcc709ad7815fa039f2db2b41134cd702da7da277d1a7d89
@@ -15,18 +15,35 @@ task_inference_status: release-grade
 task_inference_surface: spec/task-inference-surface.json
 ---
 
-# Swin Semantic Segmentation Pipeline (org.valcorza.swin-segmentation) — release-grade pretrained inference; gradient adaptation scaffold
+# Swin-T + UPerNet (org.valcorza.swin-segmentation 0.1.0) — Semantic Segmentation (Pretrained Inference; Adaptation Scaffold)
 
-[![GitHub](https://img.shields.io/badge/GitHub-kurtvalcorza%2Fswin-segmentation-pipeline-181717?style=flat&logo=github&logoColor=white)](https://github.com/kurtvalcorza/swin-segmentation-pipeline)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kurtvalcorza/swin-segmentation-pipeline/blob/main/tutorials/swin_segmentation_task_inference.ipynb)
-[![Python 3.10 required](https://img.shields.io/badge/Python-3.10%20required-3776ab?style=flat&logo=python&logoColor=white)](README.md)
+[![Upstream GitHub](https://img.shields.io/badge/Upstream%20GitHub-microsoft%2FSwin--Transformer-181717?style=flat&logo=github&logoColor=white)](https://github.com/microsoft/Swin-Transformer)
+[![arXiv Paper](https://img.shields.io/badge/arXiv-2103.14030-b31b1b.svg)](https://arxiv.org/abs/2103.14030)
+[![Code license: MIT](https://img.shields.io/badge/Code%20license-MIT-yellow.svg)](LICENSE)
+[![Weights license](https://img.shields.io/badge/Weights%20license-unknown%20%E2%80%94%20hosting%20blocked-lightgrey?style=flat)](provenance/open-weights.json)
+[![Pipeline](https://img.shields.io/badge/Pipeline-swin--segmentation--pipeline-2ea44f?style=flat&logo=github)](https://github.com/kurtvalcorza/swin-segmentation-pipeline)
 [![Checkpoint](https://img.shields.io/badge/Checkpoint-upernet__swin__tiny__patch4__window7__512x512-ffcc4d?style=flat)](spec/task-inference-surface.json)
-[![Upstream](https://img.shields.io/badge/Upstream-microsoft%2FSwin--Transformer-181717?style=flat&logo=github&logoColor=white)](https://github.com/microsoft/Swin-Transformer)
-[![arXiv](https://img.shields.io/badge/arXiv-2103.14030-b31b1b.svg)](https://arxiv.org/abs/2103.14030)
 [![Model released](https://img.shields.io/badge/Model%20released-2021--04--12-6f42c1?style=flat)](https://github.com/SwinTransformer/storage/releases/tag/v1.0.1)
 [![Sample eval](https://img.shields.io/badge/Sample%20eval-mIoU%200.387%20%7C%20pixel%20acc%200.707-2ea44f?style=flat)](tutorials/README.md)
-[![License: MIT](https://img.shields.io/badge/Code%20license-MIT-yellow.svg)](LICENSE)
-[![Weights license](https://img.shields.io/badge/Weights%20license-unknown%20%E2%80%94%20hosting%20blocked-lightgrey?style=flat)](provenance/open-weights.json)
+[![Python 3.10 required](https://img.shields.io/badge/Python-3.10%20required-3776ab?style=flat&logo=python&logoColor=white)](README.md)
+
+> [!WARNING]
+> ⚠️ **Provided for research, training, and evaluation purposes only.** Model weights are redistributed unmodified under their upstream license, which controls your use, including any commercial use or redistribution; the accompanying code and notebooks are released under this repository's license. All of it is supplied **"as is"**, without warranty of any kind, and has not been validated for production, clinical, or safety-critical use. Running the notebooks downloads third-party weights and datasets governed by their own licenses and consumes compute on your own Colab/Kaggle account. To the maximum extent permitted by law, the maintainers of this repository and the DIMER platform accept no liability for any damages arising from their use. Hosting implies no affiliation with or endorsement by the original authors.
+
+---
+
+## Interactive Colab Tutorials
+
+This pipeline provides a ready-to-run interactive Google Colab notebook for the release-grade capability, pretrained inference through the public `DimerSwinSegmenter` API. The gradient-adaptation scaffold is exercised only by `swin_segmentation_scaffold_smoke_colab.ipynb`, a `SMOKE`-profile notebook that is not a release-grade tutorial and is not listed here:
+
+- **Task Inference Tutorial**:  
+  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kurtvalcorza/swin-segmentation-pipeline/blob/main/tutorials/swin_segmentation_task_inference.ipynb) [`swin_segmentation_task_inference.ipynb`](https://github.com/kurtvalcorza/swin-segmentation-pipeline/blob/main/tutorials/swin_segmentation_task_inference.ipynb)  
+  *Pretrained ADE20K semantic segmentation with the pinned `upernet_swin_tiny_patch4_window7_512x512` checkpoint through `DimerSwinSegmenter`: verify the checkpoint, segment sample or your own images, and export label maps and the sample evaluation.*
+
+> [!NOTE]
+> Runs on the default CPU runtime; the shipped OpenMMLab runtime is CPU-only and requires Python 3.10.
+
+---
 
 ###### Description
 
