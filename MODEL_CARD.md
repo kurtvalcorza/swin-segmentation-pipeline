@@ -34,7 +34,7 @@ task_inference_surface: spec/task-inference-surface.json
 
 ## Interactive Colab Tutorials
 
-This pipeline provides a ready-to-run interactive Google Colab notebook for the release-grade capability, pretrained inference through the public `DimerSwinSegmenter` API. The gradient-adaptation scaffold is exercised only by `swin_segmentation_scaffold_smoke_colab.ipynb`, a `SMOKE`-profile notebook that is not a release-grade tutorial and is not listed here:
+This pipeline provides a ready-to-run interactive Google Colab notebook for pretrained inference through the public `DimerSwinSegmenter` API:
 
 - **Task Inference Tutorial**:  
   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kurtvalcorza/swin-segmentation-pipeline/blob/main/tutorials/swin_segmentation_task_inference.ipynb) [`swin_segmentation_task_inference.ipynb`](https://github.com/kurtvalcorza/swin-segmentation-pipeline/blob/main/tutorials/swin_segmentation_task_inference.ipynb)  
