@@ -1,3 +1,37 @@
-from .runtime import DimerSwinSegmenter, MODEL_SPEC, SegmentationResult
+from .metrics import ade20k_raw_to_indices, majority_class_baseline, semantic_iou
+from .runtime import (
+    DEFAULT_WEIGHTS_DIR,
+    INPUT_SCHEMA,
+    MODEL_ID,
+    MODEL_KEY,
+    MODEL_LICENSE,
+    MODEL_REVISION,
+    MODEL_SPEC,
+    DimerSwinSegmenter,
+    SegmentationResult,
+    evaluation_report,
+    stage_missing_files,
+    validate_image,
+    validate_inputs,
+    verify_snapshot,
+)
 
-__all__ = ["DimerSwinSegmenter", "MODEL_SPEC", "SegmentationResult"]
+__all__ = [
+    "DEFAULT_WEIGHTS_DIR",
+    "INPUT_SCHEMA",
+    "MODEL_ID",
+    "MODEL_KEY",
+    "MODEL_LICENSE",
+    "MODEL_REVISION",
+    "MODEL_SPEC",
+    "DimerSwinSegmenter",
+    "SegmentationResult",
+    "ade20k_raw_to_indices",
+    "evaluation_report",
+    "majority_class_baseline",
+    "semantic_iou",
+    "stage_missing_files",
+    "validate_image",
+    "validate_inputs",
+    "verify_snapshot",
+]

@@ -1,0 +1,20 @@
+# Qualified CPU runtime of the DIMER Swin-T UPerNet semantic-segmentation task-inference package (README "Supported
+# installation contract"): CPython 3.10 only — pip cannot pin the interpreter, so the notebook states it in
+# Prerequisites and asserts sys.version_info in its first stage cell. Carried verbatim into the notebook's
+# inline PINS by tools/build_notebook.py (template key `pins_file`); index/find-links lines are passed to pip
+# in this order. torch/torchvision are the `+cpu` builds from the PyTorch CPU index (the only index that hosts
+# them; PyPI stays the primary index for everything else); mmcv is the prebuilt OpenMMLab wheel for torch 2.1
+# CPU (what `mim install mmcv==2.1.0` resolved to in the previous notebook). NumPy 1.x is required by the
+# mmcv 2.1.0 / torch 2.1.2 binaries.
+--extra-index-url https://download.pytorch.org/whl/cpu
+--find-links https://download.openmmlab.com/mmcv/dist/cpu/torch2.1/index.html
+torch==2.1.2+cpu
+torchvision==0.16.2+cpu
+mmengine==0.10.7
+mmcv==2.1.0
+mmsegmentation==1.2.2
+ftfy==6.3.1
+regex==2024.11.6
+numpy==1.26.4
+opencv-python==4.10.0.84
+pillow==11.3.0
