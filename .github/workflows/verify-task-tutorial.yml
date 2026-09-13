@@ -25,7 +25,7 @@ jobs:
         run: |
           python -m pip install --disable-pip-version-check "nbconvert==7.16.6" "nbformat==5.10.4" "ipykernel==6.29.5"
           python -m ipykernel install --user --name python3 --display-name "Python 3"
-      - name: Validate notebook source (standalone carrier, NOTEBOOK_SPEC 1.1)
+      - name: Validate notebook source (standalone carrier, NOTEBOOK_SPEC 2.0)
         run: |
           python - <<'PY'
           import ast, json
@@ -33,7 +33,7 @@ jobs:
           p=Path('tutorials/swin_segmentation_task_inference.ipynb')
           nb=json.loads(p.read_text(encoding='utf-8'))
           dimer=nb['metadata']['dimer']
-          assert dimer['notebook_profile']=='TASK-INFERENCE' and dimer['notebook_spec']=='1.1' and dimer['standalone'] is True, dimer
+          assert dimer['notebook_profile']=='TASK-INFERENCE' and dimer['notebook_spec']=='2.0' and dimer['standalone'] is True, dimer
           text=p.read_text(encoding='utf-8')
           for marker in ('TODO','TBD','FIXME'):
               assert marker not in text
