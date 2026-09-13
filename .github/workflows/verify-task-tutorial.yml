@@ -68,6 +68,6 @@ jobs:
           assert manifest['verdict']=='accepted' and manifest['findings'], manifest
           assert report['verdict']=='not-measurable', report['verdict']  # default synthetic path has no ground truth
           assert result['checkpoint_sha256']=='e380ad3e5d94060d89e4b62b5d393cdcc7f1f3406b1d46bcab547d3c276b6064'
-          assert result['runtime']['mmseg']=='1.2.2' and result['runtime']['python'].startswith('3.10.')
+          assert result['runtime']['mmsegmentation']=='1.2.2' and result['runtime']['python'].startswith('3.10.')
           print(json.dumps({'notebook_source':result['notebook_source'],'runtime':result['runtime'],'verdict':report['verdict'],'n_predictions':len(result['predictions'])}, indent=2))
           PY
