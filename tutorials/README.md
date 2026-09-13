@@ -15,7 +15,6 @@ Notebook specification: **DIMER Notebook Specification 1.0**
 | Notebook | Profile | Capability | Default runtime | BYOD | Release status |
 |---|---|---|---|---|---|
 | `swin_segmentation_task_inference.ipynb` | `TASK-INFERENCE` | Verified pretrained Swin-T + UPerNet semantic segmentation; ADE20K tutorial mIoU/per-class IoU; machine-readable masks/metrics/provenance | CPU / CPython 3.10 Jupyter | Optional image, gated off by default | **release-grade** — exact committed notebook passed clean GitHub-hosted execution on 2026-09-11 |
-| `swin_segmentation_scaffold_smoke_colab.ipynb` | `SMOKE` | Scaffold lifecycle/model-card/provenance checks | CPU / Python 3.11+ | — | **Engineering-only** |
 
 ## Supported user-facing capability
 
