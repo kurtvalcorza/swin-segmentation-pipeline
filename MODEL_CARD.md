@@ -2,6 +2,7 @@
 license: mit
 model_card_spec: "1.1"
 pipeline_tag: image-segmentation
+task: "Semantic Segmentation"
 pipeline_spec: "1.0"
 base_model: SwinTransformer/storage upernet_swin_tiny_patch4_window7_512x512.pth (release v1.0.1, asset 34862982)
 date_published: "2021-04-12"
