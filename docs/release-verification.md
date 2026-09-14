@@ -107,7 +107,7 @@ Notebook identity is the Git blob id of `tutorials/swin_segmentation_task_infere
 
 | Date (UTC) | Commit / notebook blob | Executor | Path exercised | Wall | Outcome |
 |---|---|---|---|---|---|
-| | | | Default sample path | | pending — queued to the GPU lane |
+| 2026-09-14 | `40c2cc3` / `32dd1b002204` | GitHub Actions `verify-task-tutorial` run `34770237499`, Ubuntu 24.04.5, CPython 3.10.19, CPU | Default sample path | 75.0 s | **PASSED** — 17/17 code cells executed cleanly, checkpoint verified & loaded, 4 outputs generated, evaluation verdict `not-measurable` on synthetic sample |
 
 ### Previous carrier (Notebook Specification 1.0, repository-installing) — audit trail only
 
