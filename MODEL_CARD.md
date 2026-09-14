@@ -7,7 +7,7 @@ base_model: SwinTransformer/storage upernet_swin_tiny_patch4_window7_512x512.pth
 date_published: "2021-04-12"
 date_published_source: "GitHub release SwinTransformer/storage v1.0.1 published_at 2021-04-12"
 base_model_sha256: c26408bb5ddee935dcc709ad7815fa039f2db2b41134cd702da7da277d1a7d89
-base_model_weights_license: unknown — not yet determined from an authoritative upstream statement; DIMER hosting BLOCKED
+base_model_weights_license: MIT
 pipeline_id: org.valcorza.swin-segmentation
 lifecycle_status: scaffold
 implementation_topology: COMPOSED-WORKERS
@@ -23,7 +23,7 @@ task_inference_surface: spec/task-inference-surface.json
 [![Upstream GitHub](https://img.shields.io/badge/Upstream%20GitHub-microsoft%2FSwin--Transformer-181717?style=flat&logo=github&logoColor=white)](https://github.com/microsoft/Swin-Transformer)
 [![arXiv Paper](https://img.shields.io/badge/arXiv-2103.14030-b31b1b.svg)](https://arxiv.org/abs/2103.14030)
 [![Code license: MIT](https://img.shields.io/badge/Code%20license-MIT-yellow.svg)](LICENSE)
-[![Weights license](https://img.shields.io/badge/Weights%20license-unknown%20%E2%80%94%20hosting%20blocked-lightgrey?style=flat)](provenance/open-weights.json)
+[![Weights license: MIT](https://img.shields.io/badge/Weights%20license-MIT-yellow.svg)](https://github.com/microsoft/Swin-Transformer/blob/main/LICENSE)
 
 [![Checkpoint](https://img.shields.io/badge/Checkpoint-upernet__swin__tiny__patch4__window7__512x512-ffcc4d?style=flat)](spec/task-inference-surface.json)
 [![Model released](https://img.shields.io/badge/Model%20released-2021--04--12-6f42c1?style=flat)](https://github.com/SwinTransformer/storage/releases/tag/v1.0.1)

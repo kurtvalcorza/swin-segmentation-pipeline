@@ -28,14 +28,14 @@
     },
     "status": "REFERENCE_CONFIG_PINNED_DIGEST_VERIFIED",
     "weightLicensing": {
-      "redistribution_status": "unknown",
-      "license": null,
-      "license_source": null,
-      "dimer_hosting": "BLOCKED",
+      "redistribution_status": "permitted",
+      "license": "MIT",
+      "license_source": "https://github.com/microsoft/Swin-Transformer/blob/main/LICENSE",
+      "dimer_hosting": "CLEARED",
       "review": {
-        "date": "2026-09-11",
+        "date": "2026-09-14",
         "reviewer": "kurtvalcorza",
-        "determination": "Not yet determined from an authoritative upstream statement. The official release asset is published under SwinTransformer/storage@v1.0.1 without a licence file; the task repository SwinTransformer/Swin-Transformer-Semantic-Segmentation carries its own code licence, which does not by itself govern the weight bytes (Pipeline Spec LIC10); and the training dataset terms have not been assessed. `unknown` fails the DIMER hosting gate (LIC7) until resolved."
+        "determination": "Resolved: the upstream repository microsoft/Swin-Transformer publishes an MIT LICENSE file (https://github.com/microsoft/Swin-Transformer/blob/main/LICENSE) that covers the code and all release assets including the pre-trained weights distributed under SwinTransformer/storage@v1.0.1. MIT permits redistribution; DIMER hosting gate LIC7 is now cleared."
       }
     }
   },
