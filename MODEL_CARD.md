@@ -18,7 +18,7 @@ task_inference_status: release-grade
 task_inference_surface: spec/task-inference-surface.json
 ---
 
-# Swin-T + UPerNet (org.valcorza.swin-segmentation 0.1.0) — Semantic Segmentation (Pretrained Inference; Adaptation Scaffold)
+# Swin-T + UPerNet — Semantic Segmentation (Pretrained Inference; Adaptation Scaffold)
 
 [![Upstream GitHub](https://img.shields.io/badge/Upstream%20GitHub-microsoft%2FSwin--Transformer-181717?style=flat&logo=github&logoColor=white)](https://github.com/microsoft/Swin-Transformer)
 [![arXiv Paper](https://img.shields.io/badge/arXiv-2103.14030-b31b1b.svg)](https://arxiv.org/abs/2103.14030)
