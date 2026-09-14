@@ -1,0 +1,14 @@
+# Fleet lint configuration (same rule set as the DIMER exemplar pipelines); kept out of pyproject.toml, which
+# deliberately declares only the package. target-version follows requires-python (3.10).
+line-length = 110
+target-version = "py310"
+src = ["src", "tests", "tools"]
+
+[lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[lint.per-file-ignores]
+# The OpenMMLab wrapper and its snapshot tests predate the fleet lint; their long lines are left as written.
+"src/dimer_swin_segmentation/runtime.py" = ["E501"]
+"src/dimer_swin_segmentation/cli.py" = ["E501"]
+"tests/test_snapshot.py" = ["E501"]

@@ -1,8 +1,11 @@
 ---
 license: mit
 model_card_spec: "1.1"
+pipeline_tag: image-segmentation
 pipeline_spec: "1.0"
 base_model: SwinTransformer/storage upernet_swin_tiny_patch4_window7_512x512.pth (release v1.0.1, asset 34862982)
+date_published: "2021-04-12"
+date_published_source: "GitHub release SwinTransformer/storage v1.0.1 published_at 2021-04-12"
 base_model_sha256: c26408bb5ddee935dcc709ad7815fa039f2db2b41134cd702da7da277d1a7d89
 base_model_weights_license: unknown — not yet determined from an authoritative upstream statement; DIMER hosting BLOCKED
 pipeline_id: org.valcorza.swin-segmentation
@@ -21,7 +24,7 @@ task_inference_surface: spec/task-inference-surface.json
 [![arXiv Paper](https://img.shields.io/badge/arXiv-2103.14030-b31b1b.svg)](https://arxiv.org/abs/2103.14030)
 [![Code license: MIT](https://img.shields.io/badge/Code%20license-MIT-yellow.svg)](LICENSE)
 [![Weights license](https://img.shields.io/badge/Weights%20license-unknown%20%E2%80%94%20hosting%20blocked-lightgrey?style=flat)](provenance/open-weights.json)
-[![Pipeline](https://img.shields.io/badge/Pipeline-swin--segmentation--pipeline-2ea44f?style=flat&logo=github)](https://github.com/kurtvalcorza/swin-segmentation-pipeline)
+
 [![Checkpoint](https://img.shields.io/badge/Checkpoint-upernet__swin__tiny__patch4__window7__512x512-ffcc4d?style=flat)](spec/task-inference-surface.json)
 [![Model released](https://img.shields.io/badge/Model%20released-2021--04--12-6f42c1?style=flat)](https://github.com/SwinTransformer/storage/releases/tag/v1.0.1)
 [![Sample eval](https://img.shields.io/badge/Sample%20eval-mIoU%200.387%20%7C%20pixel%20acc%200.707-2ea44f?style=flat)](tutorials/README.md)
@@ -45,7 +48,7 @@ This pipeline provides a ready-to-run interactive Google Colab notebook for pret
 
 ---
 
-###### Description
+#### Description
 
 This repository has **two separate capability surfaces**. It now ships an implemented pretrained `TASK-INFERENCE` runtime for Swin-T + UPerNet through `dimer_swin_segmentation.DimerSwinSegmenter`, the `dimer-swin-segment` CLI, `spec/task-inference-surface.json`, and `tutorials/swin_segmentation_task_inference.ipynb`. The runtime uses the pinned OpenMMLab MMSegmentation 1.2.2 distribution, verifies exact checkpoint size and SHA-256 before deserialization, validates input images, and emits a two-dimensional semantic class-index mask over the 150 ADE20K classes. Separately, the intended composed-worker `GRADIENT-ADAPTATION` pipeline remains a DIMER Pipeline Specification 1.0 `scaffold`: the DIMER semantic-segmentation task profile, raster-mask representation, validator/finetuner worker releases, accelerator qualification, composition and release manifest are not yet implemented. The `lifecycle_status: scaffold` front matter refers to that adaptation composition and must not be read as denying the existence of the qualified pretrained inference runtime.
 
@@ -87,7 +90,7 @@ The implemented tutorial reports mean intersection-over-union (mIoU), per-class 
 
 ###### Performance Measures
 
-The release-grade notebook evaluates the actual repository runtime, not a notebook-local substitute. It predicts semantic masks for the fixed fixtures, applies the documented ignore-label conversion, accumulates intersections/unions across valid pixels, writes per-class IoU, and compares the model against a deliberately weak constant-majority baseline. This demonstrates that the supported inference path is executable and evaluable end to end. It does not measure robustness to corruption, boundary F-score, calibration, latency distributions, memory ceilings, geographic transfer, seasonal transfer, multispectral behavior or group-level parity. Pixel accuracy is reported as supplementary because frequent classes can dominate it; mIoU is the primary aggregate metric. Any deployment evaluation should use a substantially larger representative labelled set, inspect per-class behavior and define failure costs appropriate to the real application. The tutorial's measured values should remain attached to the exact fixture/runtime identity recorded in provenance rather than copied as general model specifications.
+The release-grade notebook evaluates the actual repository runtime, not a notebook-local substitute. It predicts semantic masks for the fixed fixtures, applies the documented ignore-label conversion, accumulates intersections/unions across valid pixels, writes per-class IoU, and compares the model against a deliberately weak constant-majority baseline. This demonstrates that the supported inference path is executable and evaluable end to end. It does not measure robustness to corruption, boundary F-score, calibration, latency distributions, memory ceilings, geographic transfer, seasonal transfer, multispectral behavior or group-level parity. Pixel accuracy is reported as supplementary because frequent classes can dominate it; mIoU is the primary aggregate metric. Any deployment evaluation should use a substantially larger representative labelled set, inspect per-class behavior and define failure costs appropriate to the real application. The tutorial's measured values should remain attached to the exact fixture/runtime identity recorded in provenance rather than copied as general model specifications. In the standalone notebook the evaluation stage is the package's `evaluation_report`, which carries `semantic_iou` (mean IoU over classes present, pixel accuracy, per-class IoU) and the `majority_class_baseline` with the verdict `sample-sanity` only when ground-truth masks are supplied (the gated ADE20K-fixture path) and otherwise records `not-measurable` with what labelled data would make the task measurable.
 
 ###### Decision thresholds
 
@@ -111,7 +114,7 @@ This repository is not intended for autonomous or materially consequential decis
 
 ###### Mitigations
 
-Implemented inference mitigations include a repository-owned API/CLI, exact OpenMMLab runtime version checks, image validation, an operational pixel ceiling, exact checkpoint size/SHA-256 verification before code-capable `.pth` deserialization, a narrow 150-class semantic-mask contract, provenance export and exact-notebook clean execution. The tutorial distinguishes sample measurements from upstream benchmark claims, handles ignore labels explicitly and compares against a simple baseline. The adaptation scaffold retains separate lifecycle controls: `scripts/verify_scaffold.py` refuses promotion while task/representation/worker/accelerator blockers remain, and `provenance/open-weights.json` keeps DIMER hosting blocked while adaptation-lineage redistribution is `unknown`. These mechanisms reduce accidental drift, substitution and overclaiming. They do not replace domain validation, data governance, fairness review, access control, audit logging, user training or legal assessment. Operators must add those controls according to the application context.
+Implemented inference mitigations include a repository-owned API/CLI, exact OpenMMLab runtime version checks, image validation, an operational pixel ceiling, exact checkpoint size/SHA-256 verification before code-capable `.pth` deserialization, a narrow 150-class semantic-mask contract, provenance export and exact-notebook clean execution. The tutorial distinguishes sample measurements from upstream benchmark claims, handles ignore labels explicitly and compares against a simple baseline. The adaptation scaffold retains separate lifecycle controls: `scripts/verify_scaffold.py` refuses promotion while task/representation/worker/accelerator blockers remain, and `provenance/open-weights.json` keeps DIMER hosting blocked while adaptation-lineage redistribution is `unknown`. These mechanisms reduce accidental drift, substitution and overclaiming. They do not replace domain validation, data governance, fairness review, access control, audit logging, user training or legal assessment. Operators must add those controls according to the application context. The standalone notebook routes every input through the package's `validate_inputs`, which applies the same checks as `predict` and writes an input manifest (schema, ceilings, per-image observations, verdict and any rejection finding) before inference.
 
 ###### Risks and harms
 
@@ -137,6 +140,12 @@ Unacceptable uses include biometric/demographic profiling, surveillance or socia
 | Adaptation lineage checkpoint | Microsoft/SwinTransformer `upernet_swin_tiny_patch4_window7_512x512.pth`, SHA-256 `c26408bb5ddee935dcc709ad7815fa039f2db2b41134cd702da7da277d1a7d89` |
 | Adaptation weight hosting | `redistribution_status: unknown`, `dimer_hosting: BLOCKED` |
 | Adaptation blockers | semantic-segmentation task profile, raster-mask representation, validator release, finetuner release, accelerator qualification |
+
+## Immutable provenance
+
+- **Inference model identity (fleet snapshot scheme):** `MODEL_ID` `open-mmlab/mmsegmentation:swin-tiny-patch4-window7-in1k-pre_upernet_8xb2-160k_ade20k-512x512` — the config recipe inside the pinned MMSegmentation 1.2.2 package; `MODEL_REVISION` `c685fe6767c4cadf6b051983ca6208f1b9d1ccb8` is the `v1.2.2` release-tag commit of `open-mmlab/mmsegmentation` (the config source; the checkpoint itself has no git revision); `MODEL_KEY` `swin-t-upernet-ade20k`; weights licence Apache-2.0 (OpenMMLab).
+- **Snapshot manifest:** `weights/swin-t-upernet-ade20k/dimer-base-manifest.json` pins the single checkpoint file `upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth` at 240,154,742 bytes, SHA-256 `e380ad3e5d94060d89e4b62b5d393cdcc7f1f3406b1d46bcab547d3c276b6064` (equal to `MODEL_SPEC`); `verify_snapshot` refuses any manifest that disagrees with `MODEL_SPEC`, and `stage_missing_files` fetches only an absent checkpoint from the pinned `download.openmmlab.com` URL. The `.pth` is code-capable serialization deserialized by the pinned MMSegmentation loader after the digest check; see `docs/WEIGHTS.md`.
+- **Standalone tutorial:** `tutorials/swin_segmentation_task_inference.ipynb` carries `src/dimer_swin_segmentation/metrics.py` and `runtime.py` verbatim plus the manifest and the runtime pins inline (`tools/build_notebook.py`, NOTEBOOK_SPEC 1.1 §3.6).
 
 ## References
 

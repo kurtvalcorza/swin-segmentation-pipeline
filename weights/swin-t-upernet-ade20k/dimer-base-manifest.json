@@ -1,0 +1,15 @@
+{
+  "format": "dimer_hf_snapshot",
+  "formatVersion": 1,
+  "modelKey": "swin-t-upernet-ade20k",
+  "modelId": "open-mmlab/mmsegmentation:swin-tiny-patch4-window7-in1k-pre_upernet_8xb2-160k_ade20k-512x512",
+  "revision": "c685fe6767c4cadf6b051983ca6208f1b9d1ccb8",
+  "files": [
+    {
+      "path": "upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth",
+      "bytes": 240154742,
+      "sha256": "e380ad3e5d94060d89e4b62b5d393cdcc7f1f3406b1d46bcab547d3c276b6064"
+    }
+  ],
+  "totalBytes": 240154742
+}
