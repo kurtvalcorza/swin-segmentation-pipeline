@@ -35,7 +35,7 @@
       "review": {
         "date": "2026-09-15",
         "reviewer": "kurtvalcorza",
-        "determination": "Resolved: the upstream SwinTransformer/storage repository that hosts the canonical checkpoint release asset is itself MIT-licensed. MIT permits redistribution subject to preservation of its copyright and permission notice; DIMER hosting gate LIC7 is cleared."
+        "determination": "Resolved: the SwinTransformer/storage repository that is the source of record for this checkpoint asset is MIT-licensed. MIT permits redistribution subject to preservation of its copyright and permission notice; DIMER hosting gate LIC7 is cleared."
       }
     }
   },
