@@ -1,19 +1,19 @@
-name: verify-task-tutorial
+name: verify-tutorial
 
 on:
   pull_request:
     paths:
-      - "tutorials/swin_segmentation_task_inference.ipynb"
+      - "tutorials/swin_segmentation_colab.ipynb"
       - "tutorials/README.md"
       - "src/dimer_swin_segmentation/**"
       - "tools/**"
       - "weights/**/dimer-base-manifest.json"
       - "pyproject.toml"
-      - ".github/workflows/verify-task-tutorial.yml"
+      - ".github/workflows/verify-tutorial.yml"
   workflow_dispatch:
 
 jobs:
-  execute-task-tutorial:
+  execute-tutorial:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -30,10 +30,10 @@ jobs:
           python - <<'PY'
           import ast, json
           from pathlib import Path
-          p=Path('tutorials/swin_segmentation_task_inference.ipynb')
+          p=Path('tutorials/swin_segmentation_colab.ipynb')
           nb=json.loads(p.read_text(encoding='utf-8'))
           dimer=nb['metadata']['dimer']
-          assert dimer['notebook_profile']=='TASK-INFERENCE' and dimer['notebook_spec']=='2.0' and dimer['standalone'] is True, dimer
+          assert dimer['notebook_profile']=='E2E' and dimer['notebook_spec']=='2.0' and dimer['standalone'] is True, dimer
           text=p.read_text(encoding='utf-8')
           for marker in ('TODO','TBD','FIXME'):
               assert marker not in text
@@ -42,32 +42,34 @@ jobs:
                   ast.parse(''.join(cell['source']))
                   assert cell.get('execution_count') is None
                   assert cell.get('outputs')==[]
-          print('standalone TASK-INFERENCE notebook source: PASS')
+          print('standalone E2E notebook source: PASS')
           PY
       - name: Execute the exact notebook from a scratch directory (no repository checkout on its path)
         run: |
           mkdir -p "$RUNNER_TEMP/standalone-run"
-          cp tutorials/swin_segmentation_task_inference.ipynb "$RUNNER_TEMP/standalone-run/"
+          cp tutorials/swin_segmentation_colab.ipynb "$RUNNER_TEMP/standalone-run/"
           cd "$RUNNER_TEMP/standalone-run"
-          python -m nbconvert --to notebook --execute swin_segmentation_task_inference.ipynb \
-            --output task-inference-executed.ipynb --ExecutePreprocessor.timeout=1500
+          python -m nbconvert --to notebook --execute swin_segmentation_colab.ipynb \
+            --output e2e-executed.ipynb --ExecutePreprocessor.timeout=1500
       - name: Assert machine-readable outputs
         run: |
           cd "$RUNNER_TEMP/standalone-run"
-          test -s outputs/swin_segmentation_task_inference_input_manifest.json
-          test -s outputs/swin_segmentation_task_inference_evaluation_report.json
-          test -s outputs/swin_segmentation_task_inference_result.json
-          test -s outputs/swin_segmentation_task_inference_class_coverage.csv
+          test -s outputs/swin_segmentation_input_manifest.json
+          test -s outputs/swin_segmentation_evaluation_report.json
+          test -s outputs/swin_segmentation_result.json
+          test -s outputs/swin_segmentation_class_coverage.csv
+          test -s outputs/swin-segmentation-adapter-v1.pt
           python - <<'PY'
           import json
           from pathlib import Path
           root=Path('outputs')
-          manifest=json.loads((root/'swin_segmentation_task_inference_input_manifest.json').read_text(encoding='utf-8'))
-          report=json.loads((root/'swin_segmentation_task_inference_evaluation_report.json').read_text(encoding='utf-8'))
-          result=json.loads((root/'swin_segmentation_task_inference_result.json').read_text(encoding='utf-8'))
+          manifest=json.loads((root/'swin_segmentation_input_manifest.json').read_text(encoding='utf-8'))
+          report=json.loads((root/'swin_segmentation_evaluation_report.json').read_text(encoding='utf-8'))
+          result=json.loads((root/'swin_segmentation_result.json').read_text(encoding='utf-8'))
           assert manifest['verdict']=='accepted' and manifest['findings'], manifest
-          assert report['verdict']=='not-measurable', report['verdict']  # default synthetic path has no ground truth
+          assert report['verdict']=='sample-sanity', report['verdict']
           assert result['checkpoint_sha256']=='e380ad3e5d94060d89e4b62b5d393cdcc7f1f3406b1d46bcab547d3c276b6064'
           assert result['runtime']['mmsegmentation']=='1.2.2' and result['runtime']['python'].startswith('3.10.')
-          print(json.dumps({'notebook_source':result['notebook_source'],'runtime':result['runtime'],'verdict':report['verdict'],'n_predictions':len(result['predictions'])}, indent=2))
+          assert result['reloaded_verification']['exact_mask_match'] is True
+          print(json.dumps({'notebook_source':result['notebook_source'],'runtime':result['runtime'],'verdict':report['verdict'],'adapted_vocabulary':result['adapted_vocabulary']}, indent=2))
           PY
