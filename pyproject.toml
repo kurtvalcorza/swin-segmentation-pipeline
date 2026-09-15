@@ -15,3 +15,6 @@ dimer-swin-segment = "dimer_swin_segmentation.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]

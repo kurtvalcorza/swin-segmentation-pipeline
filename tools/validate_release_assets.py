@@ -22,8 +22,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = "dimer_swin_segmentation"
 REPO_NAME = "swin-segmentation-pipeline"
-NOTEBOOK_NAME = "swin_segmentation_task_inference.ipynb"
-EXPECTED_PROFILE = "TASK-INFERENCE"
+NOTEBOOK_NAME = "swin_segmentation_colab.ipynb"
+EXPECTED_PROFILE = "E2E"
 EXPECTED_MODEL_ID = "open-mmlab/mmsegmentation:swin-tiny-patch4-window7-in1k-pre_upernet_8xb2-160k_ade20k-512x512"
 PIPELINE_CLASS = "DimerSwinSegmenter"
 # INF1: the exact load expression the model cell must use (a template's `model_load` may extend it).
@@ -34,27 +34,33 @@ CARD_BASE_MODEL = "SwinTransformer/storage upernet_swin_tiny_patch4_window7_512x
 # Additional 40-hex revisions a document may legitimately cite (none by default).
 KNOWN_SHAS: frozenset[str] = frozenset(())
 # Colab form gates that must default to the non-interactive sample path.
-BYOD_GATES = ("USE_BYOD", "USE_ADE20K_FIXTURES")
+BYOD_GATES = ("USE_BYOD_IMAGE", "USE_BYOD_DATASET")
 # Machine-readable artifacts the notebook must write (OUT1-OUT3, DAT24, EVAL21).
 EXPECTED_OUTPUTS = (
-    "outputs/swin_segmentation_task_inference_input_manifest.json",
-    "outputs/swin_segmentation_task_inference_evaluation_report.json",
-    "outputs/swin_segmentation_task_inference_result.json",
-    "outputs/swin_segmentation_task_inference_class_coverage.csv",
+    "outputs/swin_segmentation_input_manifest.json",
+    "outputs/swin_segmentation_evaluation_report.json",
+    "outputs/swin_segmentation_result.json",
+    "outputs/swin_segmentation_class_coverage.csv",
+    "outputs/swin-segmentation-adapter-v1.pt",
 )
 # Profile-specific code the notebook must exercise through the carried module's public API.
 CODE_MARKERS = (
     "if sys.version_info[:2] != (3, 10):",
-    "input_manifest = validate_inputs(image_paths, names=image_names)",
-    "validate_inputs(sample_dir / 'does-not-exist.png')",
-    "results = [pipe.predict(path) for path in image_paths]",
-    "report = evaluation_report(results, ground_truth, sample_kind=sample_kind)",
-    "print({'ceilings': {'MAX_PIXELS': MAX_PIXELS, 'pixels': INPUT_SCHEMA['pixels'], 'classes': len(pipe.classes)}})",
-    "FIXTURES_COMMIT = '850d349e5038f291284e7999fcacbedc0922534b'",
-    "if observed != expected:",
-    "ground_truth.append(ade20k_raw_to_indices(raw))",
-    "scene = Image.fromarray(array, mode='RGB')",
-    "mask_path = result.save_mask(f'outputs/swin_segmentation_task_inference_{path.stem}_semantic.png')",
+    "demo_img = tutorial_scene()",
+    "pretrained_result = pipe.predict(demo_img)",
+    "dataset_records = synthetic_segmentation_dataset(24, seed=DEFAULT_ADAPT_SEED)",
+    "dataset_summary = validate_dataset(dataset_records, ADAPT_CLASSES)",
+    "train_records, val_records = split_dataset(dataset_records, val_fraction=0.25, seed=42)",
+    "rehead_model(pipe.model, ADAPT_CLASSES, seed=DEFAULT_ADAPT_SEED)",
+    "frozen_params = freeze_backbone(pipe.model)",
+    "pre_adapt_report = pipe.evaluate(val_records, sample_kind='synthetic-val')",
+    "finetune_summary = pipe.finetune(",
+    "post_adapt_report = pipe.evaluate(val_records, sample_kind='synthetic-val')",
+    "test_img, test_mask = generate_scene(99, seed=DEFAULT_ADAPT_SEED)",
+    "adapted_test_result = pipe.predict(test_img)",
+    "artifact_descriptor = pipe.save_artifact(adapter_path, notes='Swin-T UPerNet 3-class adapted segmentation model')",
+    "reloaded_pipe = DimerSwinSegmenter.load_artifact(adapter_path, weights_dir=WEIGHTS_DIR)",
+    "numpy.testing.assert_array_equal(",
     "writer.writerow(['image_id', 'class_id', 'class_name', 'pixels', 'fraction'])",
     "'model_revision': MODEL_REVISION",
     "'model_license': MODEL_LICENSE",
@@ -65,18 +71,18 @@ CODE_MARKERS = (
 # Profile-specific learner-facing statements.
 MARKDOWN_MARKERS = (
     "**Capability:** pretrained ADE20K-150 semantic segmentation",
-    "**No adaptation occurs:**",
+    "**The default path really adapts the model:**",
     "**Trust boundary (MOD12).**",
     "is **not** a `weights_only` load",
     "not publisher authenticity",
     "**CPython 3.10** Jupyter kernel",
-    "**no per-pixel confidence or calibrated uncertainty**",
+    "**no per-pixel confidence**",
     "the package ships no threshold",
-    "`reduce_zero_label=True`",
-    "the verdict is `not-measurable`",
-    "`sample-sanity`",
-    "`majority_class_baseline`",
-    "instance or panoptic segmentation, object detection, depth, open-vocabulary segmentation",
+    "majority_class_baseline",
+    "core.dataset.vision.raster-mask",
+    "rehead_model",
+    "freeze_backbone",
+    "instance or panoptic segmentation; object detection; and depth estimation.",
 )
 # Inference must happen in this kernel: no worker process, no worker CLI, no subprocess outside the
 # generator-owned install cell (Kurt 2026-09-13). Checked on every code cell except the embedded ones and cell 1.
@@ -189,7 +195,12 @@ FORBIDDEN_PATTERNS = (
     ("trust_remote_code enabled", re.compile(r"trust_remote_code\s*[=:]\s*True")),
     (
         "unsafe deserialization",
-        re.compile(r"\bpickle\.load|\btorch\.load\s*\(|getattr\(\s*torch\s*,\s*['\"]load['\"]"),
+        re.compile(
+            r"\bpickle\.load"
+            r"|\btorch\.load\s*\((?![^)]*weights_only\s*=\s*True)"
+            r"|weights_only\s*=\s*False"
+            r"|getattr\(\s*torch\s*,\s*['\"]load['\"]"
+        ),
     ),
     ("archive extractall", re.compile(r"\.extractall\s*\(")),
     ("notebook magic or shell escape", re.compile(r"(?m)^\s*[%!]|get_ipython\(\)")),

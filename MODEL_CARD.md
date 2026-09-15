@@ -38,11 +38,11 @@ task_inference_surface: spec/task-inference-surface.json
 
 ## Interactive Colab Tutorials
 
-This pipeline provides a ready-to-run interactive Google Colab notebook for pretrained inference through the public `DimerSwinSegmenter` API:
+This pipeline provides a ready-to-run interactive Google Colab notebook demonstrating end-to-end execution (Notebook Spec 2.0) — pretrained inference, dataset contract validation, dynamic re-heading, frozen-backbone fine-tuning, held-out evaluation, and artifact export/reload:
 
-- **Task Inference Tutorial**:  
-  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kurtvalcorza/swin-segmentation-pipeline/blob/main/tutorials/swin_segmentation_task_inference.ipynb) [`swin_segmentation_task_inference.ipynb`](https://github.com/kurtvalcorza/swin-segmentation-pipeline/blob/main/tutorials/swin_segmentation_task_inference.ipynb)  
-  *Pretrained ADE20K semantic segmentation with the pinned `upernet_swin_tiny_patch4_window7_512x512` checkpoint through `DimerSwinSegmenter`: verify the checkpoint, segment sample or your own images, and export label maps and the sample evaluation.*
+- **End-to-End Adaptation Tutorial**:  
+  [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/kurtvalcorza/swin-segmentation-pipeline/blob/main/tutorials/swin_segmentation_colab.ipynb) [`swin_segmentation_colab.ipynb`](https://github.com/kurtvalcorza/swin-segmentation-pipeline/blob/main/tutorials/swin_segmentation_colab.ipynb)  
+  *Pretrained ADE20K semantic segmentation, dataset validation (`core.dataset.vision.raster-mask`), dynamic re-heading to custom classes (`background`, `road`, `structure`), bounded fine-tuning with frozen backbone, held-out mIoU and pixel accuracy evaluation against majority baseline, and portable adapter artifact export and reload.*
 
 > [!NOTE]
 > Runs on the default CPU runtime; the shipped OpenMMLab runtime is CPU-only and requires Python 3.10.
