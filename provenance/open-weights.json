@@ -30,12 +30,12 @@
     "weightLicensing": {
       "redistribution_status": "permitted",
       "license": "MIT",
-      "license_source": "https://github.com/microsoft/Swin-Transformer/blob/main/LICENSE",
+      "license_source": "https://github.com/SwinTransformer/storage/blob/main/LICENSE",
       "dimer_hosting": "CLEARED",
       "review": {
-        "date": "2026-09-14",
+        "date": "2026-09-15",
         "reviewer": "kurtvalcorza",
-        "determination": "Resolved: the upstream repository microsoft/Swin-Transformer publishes an MIT LICENSE file (https://github.com/microsoft/Swin-Transformer/blob/main/LICENSE) that covers the code and all release assets including the pre-trained weights distributed under SwinTransformer/storage@v1.0.1. MIT permits redistribution; DIMER hosting gate LIC7 is now cleared."
+        "determination": "Resolved: the upstream SwinTransformer/storage repository that hosts the canonical checkpoint release asset is itself MIT-licensed. MIT permits redistribution subject to preservation of its copyright and permission notice; DIMER hosting gate LIC7 is cleared."
       }
     }
   },
