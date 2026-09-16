@@ -16,6 +16,7 @@ import importlib.util
 import io
 import json
 import re
+import subprocess
 import tokenize
 from pathlib import Path
 
@@ -358,6 +359,15 @@ def validate_release_status() -> None:
         text = _read(ROOT / name)
         _check(not PLACEHOLDER.search(text), f"{name} contains placeholder text")
         _check(not UNSUPPORTED_CLAIMS.search(text), f"{name} makes an unsupported release/benchmark claim")
+    current_notebook = "swin_segmentation_colab.ipynb"
+    retired_notebook = "swin_segmentation_task_inference.ipynb"
+    for name in ("README.md", "MODEL_CARD.md", "STATUS.md", "tutorials/README.md"):
+        text = _read(ROOT / name)
+        _check(current_notebook in text, f"{name} must identify the current E2E notebook")
+        _check(retired_notebook not in text, f"{name} still names the retired task-inference notebook")
+    for marker in ("notebook-local", "composed-worker"):
+        _check(marker in readme.lower(), f"README.md must distinguish the {marker} surface")
+        _check(marker in _read(ROOT / "MODEL_CARD.md").lower(), f"MODEL_CARD.md must distinguish the {marker} surface")
     verification = _read(ROOT / "docs" / "release-verification.md")
     _check(
         "## Recorded executions" in verification,
@@ -467,6 +477,10 @@ def _validate_embedded_modules(path: Path, notebook: dict, build) -> list[int]:
     ]
     template = _load_tool("notebook_template").TEMPLATE
     recorded = notebook["metadata"]["dimer"]["generated_from"]["revision"]
+    _check(
+        isinstance(recorded, str) and SHA40.fullmatch(recorded) is not None,
+        f"{path.name}: generated_from.revision must be a committed 40-hex source revision",
+    )
     context = build.load_context(ROOT, template, recorded)
     expected_rels = context["module_rels"]
     _check(
@@ -475,6 +489,21 @@ def _validate_embedded_modules(path: Path, notebook: dict, build) -> list[int]:
     )
     for (index, cell), module in zip(tagged, context["modules"], strict=True):
         rel = f"{context['pkg_rel']}/{module}"
+        try:
+            committed_source = subprocess.check_output(
+                ["git", "-C", str(ROOT), "show", f"{recorded}:{rel}"],
+                encoding="utf-8",
+                text=True,
+            )
+        except subprocess.CalledProcessError as exc:
+            raise ValidationError(
+                f"{path.name}: cannot resolve carried source {rel} at generated_from.revision {recorded}"
+            ) from exc
+        _check(
+            committed_source == context["texts"][module],
+            f"{path.name}: generated_from.revision {recorded} does not contain the carried {rel}; "
+            "commit source changes before regenerating the notebook",
+        )
         _check(
             cell["metadata"]["dimer"].get("module_sha256") == context["per_module_sha256"][rel],
             f"{path.name}: cell {index} module_sha256 tag does not match {rel}",

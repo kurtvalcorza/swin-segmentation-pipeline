@@ -1,135 +1,63 @@
 # Release verification
 
-`tutorials/swin_segmentation_task_inference.ipynb` (`TASK-INFERENCE`, standalone) is a **release candidate** until
-the exact notebook revision has executed top-to-bottom in a clean supported runtime. Unit tests, JSON validation,
-code-cell compilation, and `tools/validate_release_assets.py` are necessary checks but are **not** runtime evidence
-under DIMER Notebook Specification 1.1. This file is the durable release-gate record for the notebook.
+`tutorials/swin_segmentation_colab.ipynb` (`E2E`, standalone) is a **Candidate** until the exact provenance-refreshed notebook blob executes top-to-bottom in a clean supported runtime and an integrator explicitly promotes it. Static validation, unit tests and a successful run of an earlier carrier do not transfer execution evidence to a different notebook blob.
 
-## Automatic coverage (static, every pull request)
+## Automatic coverage
 
-`.github/workflows/ci.yml` runs `ruff`, the offline unit suite (`tests/test_snapshot.py`, `tests/test_role_helpers.py`,
-`tests/test_metrics.py`, `tests/test_notebook_parity.py` — OpenMMLab stubbed, the metrics are pure NumPy, no weights, no model),
-`tools/validate_release_assets.py` and `tools/build_notebook.py --check` on Python 3.10. The validator checks:
+`.github/workflows/ci.yml` runs `ruff`, the offline unit suite, `tools/validate_release_assets.py` and `tools/build_notebook.py --check` on Python 3.10. The gates validate Notebook Specification 2.0 metadata, code-cell compilation, output-free source, required learner guidance, local module/manifest/pin parity, generated-byte parity, forbidden trust-boundary patterns and cross-document release status.
 
-- notebook JSON parses; every code cell compiles as plain Python (no `%`/`!` magics); no persisted outputs or
-  execution counts; no unresolved placeholder markers; every code cell is preceded by an explanatory markdown cell;
-- exactly one tutorial notebook, named in `tutorials/README.md` with its `TASK-INFERENCE` profile, the notebook-spec
-  version and the standalone carrier; `metadata.dimer` declares that profile, spec `1.1`, `standalone: true` and
-  `generated_from` (repository, revision, the two carried modules, their joined SHA-256, generator);
-- the standalone carrier (ST1–ST6, PAR1–PAR3): no clone, repository install, repository import, worker process or
-  subprocess on the primary path (the generator-owned install cell excepted); one cell tagged `embedded_module` per
-  carried module (`src/dimer_swin_segmentation/metrics.py`, then `runtime.py`) equal to the module after the generator's
-  documented rewrites; the inline `MANIFEST` equal to the committed snapshot manifest and the inline `PINS` equal to
-  `tools/pins.txt`; the notebook byte-identical to `tools/build_notebook.py` output; the pinned-install cell with its
-  restart-on-stale-import guard; `NOTEBOOK_SOURCE` recorded in exports;
-- `MODEL_ID`/`MODEL_REVISION` are bound only in the carried module cells (and repeated in the inline manifest, which
-  the notebook asserts against the module before fetching), the revision is a 40-hex immutable commit, and the same
-  identity string appears in `README.md`, `MODEL_CARD.md`, and `docs/WEIGHTS.md` with no stray revisions;
-- the profile-specific public-API calls (`stage_missing_files`, `verify_snapshot`,
-  `DimerSwinSegmenter.from_pretrained(weights_dir=...)`, `validate_inputs`, `predict`, `evaluation_report`),
-  the Python 3.10 assertion, the ceiling print (`MAX_PIXELS`, class count), the pinned ADE20K fixture commit and
-  digests, the exports, the learner-facing statements (no per-pixel confidence, no shipped threshold, the
-  `reduce_zero_label` convention, the `.pth` trust boundary, `not-measurable` / `sample-sanity` verdicts) and the
-  gated-off `USE_BYOD` / `USE_ADE20K_FIXTURES` defaults listed in the validator; forbidden patterns (credential-in-URL,
-  any `git clone` / `github.com/kurtvalcorza` / repository import, a mutable `revision='main'`, direct `mmseg` / `mmcv` /
-  `mmengine` / `torchvision` / `transformers` / `huggingface_hub` use **outside the carried module cells**,
-  `trust_remote_code=True`, `pickle.load`, `torch.load(`, `extractall(`);
-- `STATUS.md`, `README.md` and `tutorials/README.md` agree on one release-status token and no document makes an
-  unsupported release-grade, production-readiness or benchmark claim;
-- `MODEL_CARD.md` front matter, single H1, required heading order, and immutable provenance.
+The standalone provenance gate additionally requires `metadata.dimer.generated_from.revision` to be a committed 40-hex revision containing the exact bytes of all three carried modules:
 
-These are source/provenance and unit checks. They are **not** execution evidence. The fleet CI venv used for the
-lane gates has no OpenMMLab stack (`mmseg`, `mmcv`, `mmengine` are stubbed in the unit suite; the NumPy metrics
-are tested for real), so the package's real loader path is exercised only by a notebook execution.
+- `src/dimer_swin_segmentation/metrics.py`
+- `src/dimer_swin_segmentation/samples.py`
+- `src/dimer_swin_segmentation/runtime.py`
 
-`.github/workflows/verify-task-tutorial.yml` executes the committed notebook with `nbconvert` on a GitHub-hosted
-Python 3.10 runner from a scratch directory that contains only the notebook (no repository checkout on the notebook's
-path) and asserts the four exports. A green run there is a clean-runtime execution of the default path and is the
-promotion evidence to record below; a red run blocks release.
+These are source/provenance checks, not clean-runtime execution evidence. `.github/workflows/verify-tutorial.yml` provides the supported execution gate: it copies only the committed notebook into a scratch directory, executes it with `nbconvert` on a GitHub-hosted CPython 3.10 CPU runner, and asserts the five machine-readable outputs including the safely reloaded adapter.
 
 ## Executor paths
 
-| Path | Runtime | Role |
+| Path | Runtime | Release role |
 |---|---|---|
-| GitHub Actions `verify-task-tutorial` (supported clean-room path) | `ubuntu-latest`, `actions/setup-python` 3.10, CPU; `nbconvert` from a scratch directory | The qualified Python 3.10 CPU runtime; a green run is promotion evidence once recorded here with the notebook blob |
-| Jupyter on a CPython 3.10 kernel (user path) | Any Linux host with Python 3.10; CPU | The runtime the tutorial is written for; the notebook asserts the interpreter version |
-| Google Colab | Default Colab runtimes ship Python 3.11+ | **Unsupported**: the OpenMMLab wheels exist for Python 3.10 only and the pinned install fails; the badge is kept for the file location, not as a supported executor |
-| Kaggle CLI kernel | Kaggle images ship Python 3.11+ | **Unsupported** for the same reason |
+| GitHub Actions `verify-tutorial` | Ubuntu, CPython 3.10, CPU; exact notebook copied to a scratch directory | Supported clean-runtime promotion evidence when tied to the exact commit and notebook blob |
+| Local Jupyter | Linux CPython 3.10, CPU | Supported user path when the exact pins and clean-carrier conditions are reproduced |
+| Default Google Colab | Python 3.11+ | Unsupported: the pinned OpenMMLab wheel set requires Python 3.10 |
+| Default Kaggle notebook | Python 3.11+ | Unsupported for the same reason |
 
 ## Supported release verification procedure
 
-Before changing the registry status from `Candidate` to `Release-grade`:
+Before changing the status from `Candidate` to `Release-grade`:
 
-1. resolve the exact PR/commit head under review and confirm static CI is green;
-2. run that exact notebook revision in a clean CPython 3.10 CPU runtime with **no repository checkout** on the
-   notebook's path and a clean `weights/` directory (the `verify-task-tutorial` workflow does this);
-3. run the notebook top-to-bottom without editing implementation cells (form parameters at their defaults for the
-   sample path: `USE_BYOD = False`, `USE_ADE20K_FIXTURES = False`);
-4. verify that Section 1 reports `NOTEBOOK_SOURCE.repository_revision` equal to the revision recorded in
-   `metadata.dimer.generated_from` and that the installed core package versions equal the inline `PINS`
-   (= `tools/pins.txt`: torch 2.1.2+cpu, mmcv 2.1.0, mmengine 0.10.7, mmsegmentation 1.2.2, numpy 1.26.4);
-5. verify every default-path stage completes:
-   - pinned runtime installed from the inline `PINS` (PyPI plus the PyTorch CPU index and the OpenMMLab mmcv
-     find-links) with no GitHub access;
-   - the two carried module cells execute (define `DimerSwinSegmenter`, `semantic_iou`, `validate_inputs`,
-     `evaluation_report`) with no import of the repository package;
-   - pinned checkpoint acquisition through the package: the inline `MANIFEST` is asserted against the module identity
-     and written to `weights/swin-t-upernet-ade20k/`, `stage_missing_files(WEIGHTS_DIR, allow_download=True)` reports
-     the one manifest entry on a clean runtime, `verify_snapshot` returns the manifest dict, and
-     `from_pretrained(weights_dir=WEIGHTS_DIR)` reports `source == 'local-snapshot'`;
-   - Section 4 asserts Python 3.10 and prints `mmseg 1.2.2`, `mmcv 2.1.0`, `mmengine 0.10.7`, 150 classes;
-   - the synthetic 512×384 scene is generated in code with its SHA-256 printed;
-   - `validate_inputs` writes `outputs/swin_segmentation_task_inference_input_manifest.json` (verdict `accepted`, one
-     recorded rejection finding from the missing-file probe);
-   - segmentation through `predict(path)` per image, each mask saved as
-     `outputs/swin_segmentation_task_inference_<image>_semantic.png`;
-   - `evaluation_report` writes `outputs/swin_segmentation_task_inference_evaluation_report.json` with verdict
-     `not-measurable` on the synthetic sample (no ground truth), stated as such;
-   - `outputs/swin_segmentation_task_inference_result.json` and `outputs/swin_segmentation_task_inference_class_coverage.csv`
-     written with `NOTEBOOK_SOURCE`, model revision, model licence, checkpoint digest, runtime versions and device;
-6. verify the exports exist and the interpretation section matches the observed path;
-7. record the notebook Git blob id, commit, runtime (platform, Python, PyTorch, mmseg/mmcv/mmengine, device), model
-   identifier and immutable revision, whether the weights directory was clean, outcome, produced outputs, and any
-   warning or applicable `SHOULD` deviation in the table below;
-8. record no access tokens or other secrets.
+1. Resolve the exact commit and Git blob of `tutorials/swin_segmentation_colab.ipynb`; confirm CI and generated-byte parity are green.
+2. Execute that blob from a scratch directory with no repository checkout on its path, a clean `weights/` directory, CPython 3.10 and CPU.
+3. Keep `USE_BYOD_IMAGE = False` and `USE_BYOD_DATASET = False`; run all 16 code cells without implementation edits.
+4. Confirm `NOTEBOOK_SOURCE.repository_revision` equals `metadata.dimer.generated_from.revision` and the runtime matches `tools/pins.txt`.
+5. Confirm the checkpoint size/SHA-256 before deserialization, the 24 generated records and 18/6 split, dynamic three-class re-heading, frozen backbone, bounded AdamW loop, `sample-sanity` evaluation, unseen-scene inference, adapter export and `weights_only=True` reload with exact mask equality.
+6. Confirm these outputs exist and are non-empty: `swin_segmentation_input_manifest.json`, `swin_segmentation_evaluation_report.json`, `swin_segmentation_result.json`, `swin_segmentation_class_coverage.csv`, and `swin-segmentation-adapter-v1.pt`.
+7. Record the commit, notebook blob, workflow/run identifier, runtime, device, wall time, result and relevant warnings below. Never record credentials.
 
-The gated `USE_ADE20K_FIXTURES` path (two labelled ADE20K validation fixtures, `semantic_iou` + `majority_class_baseline`)
-is not part of the default-path gate; a separate run with the gate enabled may be recorded as additional evidence.
-
-A known-failing default path in the supported runtime blocks release.
+A known failure or an execution record for a different carrier blocks promotion.
 
 ## Recorded executions
 
-Notebook identity is the Git blob id of `tutorials/swin_segmentation_task_inference.ipynb` (verify with
-`git rev-parse <commit>:tutorials/swin_segmentation_task_inference.ipynb`).
+Notebook identity is the Git blob of `tutorials/swin_segmentation_colab.ipynb`, resolved with `git rev-parse <commit>:tutorials/swin_segmentation_colab.ipynb`.
 
-### Standalone carrier (Notebook Specification 1.1) — clean-runtime evidence
+### E2E standalone carrier (Notebook Specification 2.0)
 
-| Date (UTC) | Commit / notebook blob | Executor | Path exercised | Wall | Outcome |
-|---|---|---|---|---|---|
-| 2026-09-14 | `40c2cc3` / `32dd1b002204` | GitHub Actions `verify-task-tutorial` run `34770237499`, Ubuntu 24.04.5, CPython 3.10.19, CPU | Default sample path | 75.0 s | **PASSED** — 17/17 code cells executed cleanly, checkpoint verified & loaded, 4 outputs generated, evaluation verdict `not-measurable` on synthetic sample |
+| Date (UTC) | Commit / notebook blob | Executor | Path | Wall | Outcome | Qualification |
+|---|---|---|---|---:|---|---|
+| 2026-09-15 | PR #10 head `5161303faa38ce70a8f61797b0a451a6e6c31646` / `2a13f3835b58c04743f4070a55a966c0dc701358` | GitHub Actions run `34974178073`, job `104397600851`; CPython 3.10, CPU | Scratch-directory default E2E path | 557 s notebook step (572 s job) | **PASSED** — 16/16 code cells, output assertions, `sample-sanity`, adapter reload exact-mask match | **Historical, non-qualifying for the refreshed carrier** — embedded source revision `79e83e8` did not contain the carried E2E modules |
 
-### Previous carrier (Notebook Specification 1.0, repository-installing) — audit trail only
+The successful run shows that the PR #10 implementation executed end to end, but its false source-revision label breaks the immutable provenance claim. It cannot qualify the regenerated notebook.
 
-| Date (UTC) | Commit | Executor | Path exercised | Outcome |
-|---|---|---|---|---|
-| 2026-09-11 | PR head `21bb78bfe2c53820490042b0523ee5dd0c7becd1` | GitHub Actions `verify-task-tutorial` run `34575117856`, Ubuntu 24.04.5, CPython 3.10.21, CPU | repository clone + pinned install, two ADE20K validation fixtures (510,803 valid labelled pixels) | success — aggregate mIoU `0.3869899942`, pixel accuracy `0.7065385286`, 11 classes with non-zero union; constant-majority (`sky`) baseline mIoU `0.0539564666` |
+### Superseded task-inference carriers — audit trail only
 
-That run exercised a notebook that cloned this repository and evaluated the ADE20K fixtures by default; it is
-evidence for that carrier and for the OpenMMLab inference path, not for the standalone notebook above.
+| Date (UTC) | Commit / notebook blob | Executor | Outcome |
+|---|---|---|---|
+| 2026-09-14 | `40c2cc3` / `32dd1b002204` | GitHub Actions run `34770237499`; CPython 3.10, CPU | Passed 17/17 code cells in 75.0 s; synthetic inference verdict `not-measurable` |
+| 2026-09-11 | PR head `21bb78bfe2c53820490042b0523ee5dd0c7becd1` | GitHub Actions run `34575117856`; CPython 3.10, CPU | Passed repository-installing carrier; two ADE20K fixtures produced mIoU `0.3869899942` and pixel accuracy `0.7065385286` |
+
+These records belong to replaced task-inference notebooks and are not E2E adaptation evidence.
 
 ## Current status
 
-No clean-runtime execution of the standalone notebook has been recorded yet; the run is **pending**. Static validation
-(`tools/validate_release_assets.py`), nbformat validation, a `compile()` sweep over every code cell, and the offline
-unit suite passed on the tutorial source at the candidate revision, which is necessary but not sufficient. The
-registry status remains **Candidate** until a reviewer confirms a recorded run against the notebook blob under review
-and an integrator promotes it; promotion is not performed by the builder. Facts a reviewer should weigh:
-`stage_missing_files` was exercised only with an injected downloader in the unit suite (the real fetch from
-`download.openmmlab.com` into a fresh `weights/swin-t-upernet-ade20k/` has not been executed on this carrier);
-`verify_snapshot` was executed once over the real local checkpoint on the builder's workstation (OK); the OpenMMLab
-loader and the single-command pinned install (`--extra-index-url` PyTorch CPU +
-`--find-links` OpenMMLab mmcv, in place of the previous notebook's separate `pip`/`mim` steps) have been validated
-statically only — wheel availability for every pin was checked against the indexes, resolution has not been run; and
-the standalone carrier itself — executing the carried module cells in a runtime that has no repository checkout — has
-been validated statically (parity PASS, carrier probe) but never run.
+The source-bound E2E carrier is **Candidate**. Its static gates can pass locally after regeneration, but no clean supported-runtime execution is yet recorded for its exact notebook blob. Promotion remains pending that run and explicit integrator review.

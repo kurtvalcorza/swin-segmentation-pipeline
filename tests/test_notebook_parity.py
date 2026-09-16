@@ -10,6 +10,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import re
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -63,6 +64,23 @@ def test_par1_embedded_modules_equal_repository_modules(notebook: dict) -> None:
         assert cell["metadata"]["dimer"]["module_sha256"] == ctx["per_module_sha256"][rel]
         drifted = f"embedded module cell for {rel} drifted from the package; regenerate the notebook"
         assert _source(cell).rstrip("\n") + "\n" == ctx["embedded"][module], drifted
+
+
+def test_st5_recorded_revision_contains_carried_sources(notebook: dict) -> None:
+    """The provenance revision must contain the exact source modules carried by the notebook."""
+    recorded = notebook["metadata"]["dimer"]["generated_from"]["revision"]
+    assert re.fullmatch(r"[0-9a-f]{40}", recorded), recorded
+    ctx = build.load_context(ROOT, TEMPLATE, recorded)
+    for module, rel in zip(ctx["modules"], ctx["module_rels"], strict=True):
+        committed = subprocess.check_output(
+            ["git", "-C", str(ROOT), "show", f"{recorded}:{rel}"],
+            encoding="utf-8",
+            text=True,
+        )
+        assert committed == ctx["texts"][module], (
+            f"generated_from.revision {recorded} does not contain the carried {rel}; "
+            "commit source changes before regenerating the notebook"
+        )
 
 
 REWRITES = TEMPLATE.get("rewrites", build.REWRITES)  # a template may declare its own rules (generator /2)
