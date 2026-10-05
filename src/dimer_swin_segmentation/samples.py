@@ -15,14 +15,16 @@ Two separate label vocabularies live here and must not be conflated:
 from __future__ import annotations
 
 import math
+import shutil
+import zipfile
 from collections.abc import Sequence
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 import numpy as np
 from PIL import Image, ImageDraw
 
-from .metrics import IGNORE_INDEX
+from .metrics import IGNORE_INDEX, semantic_iou
 
 ADE20K_SCENE_SIZE = (512, 384)
 ADAPT_SCENE_SIZE = (512, 512)
@@ -105,7 +107,8 @@ def generate_scene(
         st_g = int(rng.integers(30, 80))
         st_b = int(rng.integers(30, 80))
         d.rectangle([sx, sy, sx + sw, sy_bottom], fill=(st_r, st_g, st_b), outline=(255, 255, 255), width=2)
-        mask[sy:sy_bottom, sx : sx + sw] = 2
+        # PIL rectangles include both end coordinates, so the mask does too: every drawn pixel is labelled.
+        mask[sy : sy_bottom + 1, sx : sx + sw + 1] = 2
 
         # Optional roof triangle
         if rng.random() > 0.4:
@@ -261,3 +264,179 @@ def validate_dataset(
         "schema": "core.dataset.vision.raster-mask",
         "verdict": "accepted",
     }
+
+
+
+# ------------------------------------------------------------------------------------------------------------
+# A non-learned baseline (SWS-M4) and the BYOD dataset reader (SWS-M2)
+# ------------------------------------------------------------------------------------------------------------
+
+
+def _rgb(image: Any) -> np.ndarray:
+    if isinstance(image, (str, Path)):
+        with Image.open(image) as opened:
+            return np.asarray(opened.convert("RGB"), dtype=np.float32)
+    return np.asarray(image.convert("RGB"), dtype=np.float32)
+
+
+def colour_centroid_baseline(
+    train_records: Sequence[dict[str, Any]],
+    eval_records: Sequence[dict[str, Any]],
+    num_classes: int,
+    *,
+    stride: int = 4,
+) -> dict[str, Any]:
+    """A non-learned baseline: one mean RGB colour per class, fitted on the training masks (every
+    ``stride``-th pixel), and every evaluated pixel labelled with the class of the nearest mean colour. If it
+    scores as well as the adapted network, the evaluation cannot show what the learned features contribute."""
+    sums = np.zeros((num_classes, 3), dtype=np.float64)
+    counts = np.zeros(num_classes, dtype=np.int64)
+    for record in train_records:
+        rgb = _rgb(record["image"])[::stride, ::stride].reshape(-1, 3)
+        labels = np.asarray(record["mask"])[::stride, ::stride].reshape(-1).astype(np.int64)
+        keep = labels != IGNORE_INDEX
+        np.add.at(sums, labels[keep], rgb[keep])
+        counts += np.bincount(labels[keep], minlength=num_classes)[:num_classes]
+    seen = counts > 0
+    if not seen.any():
+        raise ValueError("colour_centroid_baseline needs labelled training pixels")
+    centroids = np.where(seen[:, None], sums / np.maximum(counts, 1)[:, None], np.inf)
+    predictions, references = [], []
+    for record in eval_records:
+        rgb = _rgb(record["image"])
+        distance = ((rgb[:, :, None, :] - centroids[None, None, :, :]) ** 2).sum(axis=-1)
+        predictions.append(distance.argmin(axis=-1).astype(np.int64))
+        references.append(np.asarray(record["mask"]).astype(np.int64))
+    scored = semantic_iou(predictions, references, num_classes=num_classes)
+    return {
+        "id": "colour_nearest_centroid",
+        "miou": scored["miou"],
+        "pixel_accuracy": scored["pixel_accuracy"],
+        "per_class": scored["per_class"],
+        "centroids_rgb": [
+            [round(float(v), 1) for v in row] if seen[i] else None for i, row in enumerate(centroids)
+        ],
+        "fitted_on": "train",
+    }
+
+
+BYOD_MAX_RECORDS = 500
+BYOD_SIDE_RANGE = (32, 4096)
+BYOD_IMAGE_SUFFIXES = (".png", ".jpg", ".jpeg")
+BYOD_CLASS_FILES = ("classes.txt", "classes.json")
+
+
+def extract_byod_zip(
+    archive: str | Path, destination: str | Path, *, max_expanded_bytes: int = 2 * 1024**3
+) -> list[str]:
+    """Extract a BYOD dataset zip member by member (no ``extractall``): absolute or ``..`` paths and symlinks
+    are refused; operating-system metadata (``__MACOSX/``, ``._*``, ``.DS_Store``) is skipped and returned."""
+    destination = Path(destination)
+    if destination.exists():
+        shutil.rmtree(destination)
+    destination.mkdir(parents=True)
+    skipped: list[str] = []
+    expanded = 0
+    with zipfile.ZipFile(archive) as bundle:
+        for info in bundle.infolist():
+            name = info.filename
+            member = PurePosixPath(name)
+            if "\\" in name or member.is_absolute() or ".." in member.parts:
+                raise ValueError(f"BYOD zip member {name!r} has an unsafe path; refusing the archive")
+            if (info.external_attr >> 16) & 0o170000 == 0o120000:
+                raise ValueError(f"BYOD zip member {name!r} is a symlink; refusing the archive")
+            if "__MACOSX" in member.parts or member.name.startswith("._") or member.name == ".DS_Store":
+                skipped.append(name)
+                continue
+            if info.is_dir():
+                continue
+            expanded += info.file_size
+            if expanded > max_expanded_bytes:
+                raise ValueError(f"BYOD zip expands beyond {max_expanded_bytes} bytes; split it")
+            target = destination / member
+            target.parent.mkdir(parents=True, exist_ok=True)
+            with bundle.open(info) as source, target.open("wb") as sink:
+                shutil.copyfileobj(source, sink)
+    return skipped
+
+
+def read_byod_dataset(root: str | Path) -> tuple[list[dict[str, Any]], tuple[str, ...]]:
+    """Read a user segmentation dataset: ``images/`` (PNG or JPEG), ``masks/`` (single-channel PNG
+    class-index rasters with the same file stem as their image; ``255`` = ignore) and ``classes.txt`` (one
+    class name per line, in index order) or ``classes.json`` (a list of names), at the folder root or inside
+    one wrapper folder.
+
+    Returns ``(records, class_names)`` with images and masks loaded in memory. Every refusal names the file
+    and the rule; ``validate_dataset`` then checks shapes and class indices (for example a mask holding class
+    7 with three classes is refused, naming the record)."""
+    root = Path(root)
+    if not root.is_dir():
+        raise ValueError(f"BYOD dataset {root} is not a folder (supply a folder or a .zip)")
+    if not (root / "images").is_dir():
+        children = [p for p in root.iterdir() if p.is_dir() and not p.name.startswith((".", "__MACOSX"))]
+        if len(children) == 1 and (children[0] / "images").is_dir():
+            root = children[0]
+        else:
+            raise ValueError(
+                f"BYOD dataset {root} needs images/ and masks/ folders "
+                "(at the top level or inside one wrapper folder)"
+            )
+    if not (root / "masks").is_dir():
+        raise ValueError(f"BYOD dataset {root} has images/ but no masks/ folder")
+    class_file = next((root / name for name in BYOD_CLASS_FILES if (root / name).is_file()), None)
+    if class_file is None:
+        raise ValueError(
+            f"BYOD dataset {root} needs classes.txt (one class name per line) "
+            "or classes.json (a list of names)"
+        )
+    if class_file.suffix == ".json":
+        import json
+
+        names = json.loads(class_file.read_text(encoding="utf-8"))
+        if not isinstance(names, list) or not all(isinstance(n, str) for n in names):
+            raise ValueError(f"{class_file.name}: must be a JSON list of class-name strings")
+    else:
+        names = [line.strip() for line in class_file.read_text(encoding="utf-8").splitlines() if line.strip()]
+    if len(names) < 2 or len(set(names)) != len(names):
+        raise ValueError(f"{class_file.name}: needs at least 2 distinct class names, found {names}")
+    if len(names) > 254:
+        raise ValueError(f"{class_file.name}: at most 254 classes (255 is the ignore index)")
+    images = sorted(p for p in (root / "images").iterdir() if p.is_file() and not p.name.startswith("."))
+    stray = [p.name for p in images if p.suffix.lower() not in BYOD_IMAGE_SUFFIXES]
+    if stray:
+        raise ValueError(f"images/ holds files that are not PNG or JPEG: {stray}")
+    if not 2 <= len(images) <= BYOD_MAX_RECORDS:
+        raise ValueError(
+            f"images/ holds {len(images)} images; 2..{BYOD_MAX_RECORDS} are required "
+            "(a train and a validation split are made)"
+        )
+    masks = {p.stem: p for p in (root / "masks").iterdir() if p.is_file() and not p.name.startswith(".")}
+    records = []
+    for path in images:
+        mask_path = masks.get(path.stem)
+        if mask_path is None:
+            raise ValueError(f"{path.name}: no mask named {path.stem}.png in masks/")
+        if mask_path.suffix.lower() != ".png":
+            raise ValueError(f"masks/{mask_path.name}: masks must be PNG class-index rasters")
+        try:
+            with Image.open(path) as opened:
+                image = opened.convert("RGB")
+            with Image.open(mask_path) as opened_mask:
+                if opened_mask.mode not in ("L", "P", "I;16", "I"):
+                    raise ValueError(
+                        f"masks/{mask_path.name}: mode {opened_mask.mode}; "
+                        "a mask must be a single-channel class-index PNG"
+                    )
+                mask = np.array(opened_mask).astype(np.int64)
+        except (OSError, SyntaxError) as exc:
+            raise ValueError(f"{path.name}: cannot be decoded ({type(exc).__name__}: {exc})") from exc
+        width, height = image.size
+        if not (BYOD_SIDE_RANGE[0] <= min(width, height) and max(width, height) <= BYOD_SIDE_RANGE[1]):
+            low, high = BYOD_SIDE_RANGE
+            raise ValueError(f"{path.name}: {width}x{height} px; each side must be within {low}..{high} px")
+        stored = mask.astype(np.uint8) if mask.max(initial=0) <= 255 else mask
+        records.append({"id": path.stem, "image": image, "mask": stored})
+    unused = sorted(set(masks) - {p.stem for p in images})
+    if unused:
+        raise ValueError(f"masks/ holds masks with no image: {unused}")
+    return records, tuple(names)

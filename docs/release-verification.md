@@ -3,7 +3,7 @@
 `tutorials/swin_segmentation_task_inference.ipynb` (`TASK-INFERENCE`, standalone) is a **release candidate** until
 the exact notebook revision has executed top-to-bottom in a clean supported runtime. Unit tests, JSON validation,
 code-cell compilation, and `tools/validate_release_assets.py` are necessary checks but are **not** runtime evidence
-under DIMER Notebook Specification 1.1. This file is the durable release-gate record for the notebook.
+under DIMER Notebook Specification 2.2. This file is the durable release-gate record for the notebook.
 
 ## Automatic coverage (static, every pull request)
 
@@ -14,7 +14,7 @@ under DIMER Notebook Specification 1.1. This file is the durable release-gate re
 - notebook JSON parses; every code cell compiles as plain Python (no `%`/`!` magics); no persisted outputs or
   execution counts; no unresolved placeholder markers; every code cell is preceded by an explanatory markdown cell;
 - exactly one tutorial notebook, named in `tutorials/README.md` with its `TASK-INFERENCE` profile, the notebook-spec
-  version and the standalone carrier; `metadata.dimer` declares that profile, spec `1.1`, `standalone: true` and
+  version and the standalone carrier; `metadata.dimer` declares that profile, spec `2.2`, `standalone: true` and
   `generated_from` (repository, revision, the two carried modules, their joined SHA-256, generator);
 - the standalone carrier (ST1–ST6, PAR1–PAR3): no clone, repository install, repository import, worker process or
   subprocess on the primary path (the generator-owned install cell excepted); one cell tagged `embedded_module` per
@@ -100,10 +100,19 @@ A known-failing default path in the supported runtime blocks release.
 
 ## Recorded executions
 
-Notebook identity is the Git blob id of `tutorials/swin_segmentation_task_inference.ipynb` (verify with
-`git rev-parse <commit>:tutorials/swin_segmentation_task_inference.ipynb`).
+Notebook identity is the Git blob id of the notebook file (verify with `git rev-parse <commit>:<path>`). The current notebook is
+`tutorials/swin_segmentation_colab.ipynb` (`E2E`); `tutorials/swin_segmentation_task_inference.ipynb` was removed in `af73863`
+and its row below is history.
 
-### Standalone carrier (Notebook Specification 1.1) — clean-runtime evidence
+### Current notebook `swin_segmentation_colab.ipynb` (E2E) — GitHub Actions runs
+
+| Date (UTC) | Commit / notebook blob | Executor | Path exercised | Wall | Outcome |
+|---|---|---|---|---|---|
+| 2026-09-24 | PR head `ffff5c9` (merged as `4d5f4bb`) / `2a13f3835b58` | GitHub Actions `verify-tutorial` run [`35997457508`](https://github.com/kurtvalcorza/swin-segmentation-pipeline/actions/runs/35997457508) (job `107625689260`), Ubuntu, CPython 3.10 kernel, CPU | Default path (in-kernel pinned install; synthetic adaptation dataset) | 10 min 8 s (job) | **PASSED** — the workflow's assertions held: input manifest accepted with a recorded refusal, evaluation verdict `sample-sanity`, checkpoint SHA-256 `e380ad3e…6064`, `mmsegmentation` 1.2.2, Python 3.10.x, exact reload mask match. The workflow printed no metric values, so none are recorded; the 2026-10-05 fixes make it print and upload them. |
+
+The 2026-10-05 review fixes (isolated uv environment with a managed CPython 3.10.18, BYOD dataset branch, colour baseline, corrected masks) change the notebook; no run of the regenerated blob is recorded yet.
+
+### Removed notebook `swin_segmentation_task_inference.ipynb` (TASK-INFERENCE) — history
 
 | Date (UTC) | Commit / notebook blob | Executor | Path exercised | Wall | Outcome |
 |---|---|---|---|---|---|
@@ -120,16 +129,14 @@ evidence for that carrier and for the OpenMMLab inference path, not for the stan
 
 ## Current status
 
-No clean-runtime execution of the standalone notebook has been recorded yet; the run is **pending**. Static validation
+The current notebook's earlier blob `2a13f383` passed the GitHub Actions run above; the regenerated blob is **pending**. Static validation
 (`tools/validate_release_assets.py`), nbformat validation, a `compile()` sweep over every code cell, and the offline
 unit suite passed on the tutorial source at the candidate revision, which is necessary but not sufficient. The
 registry status remains **Candidate** until a reviewer confirms a recorded run against the notebook blob under review
-and an integrator promotes it; promotion is not performed by the builder. Facts a reviewer should weigh:
-`stage_missing_files` was exercised only with an injected downloader in the unit suite (the real fetch from
-`download.openmmlab.com` into a fresh `weights/swin-t-upernet-ade20k/` has not been executed on this carrier);
-`verify_snapshot` was executed once over the real local checkpoint on the builder's workstation (OK); the OpenMMLab
-loader and the single-command pinned install (`--extra-index-url` PyTorch CPU +
-`--find-links` OpenMMLab mmcv, in place of the previous notebook's separate `pip`/`mim` steps) have been validated
-statically only — wheel availability for every pin was checked against the indexes, resolution has not been run; and
-the standalone carrier itself — executing the carried module cells in a runtime that has no repository checkout — has
-been validated statically (parity PASS, carrier probe) but never run.
+and an integrator promotes it; promotion is not performed by the builder. Facts a reviewer should weigh: the
+2026-09-24 run executed the checkpoint fetch, the OpenMMLab loader, the adaptation and the reload with pip in a Python 3.10
+kernel; the current revision installs the same pins with `uv` into a uv-managed CPython 3.10.18 (pins mode, not
+hash-locked: the PyTorch CPU index and the OpenMMLab wheel page could not be reached to compile a lock), re-heads a fresh
+model copy, adds a BYOD dataset branch and a colour baseline, and corrects the synthetic masks, and none of that has run
+yet. A hosted run must record `restarted: false`, the library versions, the adaptation metrics beside both baselines, and a
+Colab run before any entry point calls Colab supported.
