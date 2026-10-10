@@ -3,7 +3,7 @@
 `tutorials/swin_segmentation_task_inference.ipynb` (`TASK-INFERENCE`, standalone) is a **release candidate** until
 the exact notebook revision has executed top-to-bottom in a clean supported runtime. Unit tests, JSON validation,
 code-cell compilation, and `tools/validate_release_assets.py` are necessary checks but are **not** runtime evidence
-under DIMER Notebook Specification 1.1. This file is the durable release-gate record for the notebook.
+under DIMER Notebook Specification 2.2. This file is the durable release-gate record for the notebook.
 
 ## Automatic coverage (static, every pull request)
 
@@ -14,7 +14,7 @@ under DIMER Notebook Specification 1.1. This file is the durable release-gate re
 - notebook JSON parses; every code cell compiles as plain Python (no `%`/`!` magics); no persisted outputs or
   execution counts; no unresolved placeholder markers; every code cell is preceded by an explanatory markdown cell;
 - exactly one tutorial notebook, named in `tutorials/README.md` with its `TASK-INFERENCE` profile, the notebook-spec
-  version and the standalone carrier; `metadata.dimer` declares that profile, spec `1.1`, `standalone: true` and
+  version and the standalone carrier; `metadata.dimer` declares that profile, spec `2.2`, `standalone: true` and
   `generated_from` (repository, revision, the two carried modules, their joined SHA-256, generator);
 - the standalone carrier (ST1–ST6, PAR1–PAR3): no clone, repository install, repository import, worker process or
   subprocess on the primary path (the generator-owned install cell excepted); one cell tagged `embedded_module` per
@@ -100,10 +100,20 @@ A known-failing default path in the supported runtime blocks release.
 
 ## Recorded executions
 
-Notebook identity is the Git blob id of `tutorials/swin_segmentation_task_inference.ipynb` (verify with
-`git rev-parse <commit>:tutorials/swin_segmentation_task_inference.ipynb`).
+Notebook identity is the Git blob id of the notebook file (verify with `git rev-parse <commit>:<path>`). The current notebook is
+`tutorials/swin_segmentation_colab.ipynb` (`E2E`); `tutorials/swin_segmentation_task_inference.ipynb` was removed in `af73863`
+and its row below is history.
 
-### Standalone carrier (Notebook Specification 1.1) — clean-runtime evidence
+### Current notebook `swin_segmentation_colab.ipynb` (E2E) — GitHub Actions runs
+
+| Date (UTC) | Commit / notebook blob | Executor | Path exercised | Wall | Outcome |
+|---|---|---|---|---|---|
+| 2026-09-24 | PR head `ffff5c9` (merged as `4d5f4bb`) / `2a13f3835b58` | GitHub Actions `verify-tutorial` run [`35997457508`](https://github.com/kurtvalcorza/swin-segmentation-pipeline/actions/runs/35997457508) (job `107625689260`), Ubuntu, CPython 3.10 kernel, CPU | Default path (in-kernel pinned install; synthetic adaptation dataset) | 10 min 8 s (job) | **PASSED** — the workflow's assertions held: input manifest accepted with a recorded refusal, evaluation verdict `sample-sanity`, checkpoint SHA-256 `e380ad3e…6064`, `mmsegmentation` 1.2.2, Python 3.10.x, exact reload mask match. The workflow printed no metric values, so none are recorded; the 2026-10-05 fixes make it print and upload them. |
+| 2026-10-10 (11:11:12 UTC start) | `36f8f08573bf384372aead0e0a6c618e5affc094` / `3cce5e9c2ecf3ed8d14581e2a78ff4889d222e16` (`NOTEBOOK_SOURCE.repository_revision` `42810a87de14`, `module_sha256` `f9e4d755d1c7…`, generator `build_notebook.py/2.1-swd`, `notebook_spec` 2.2) | Colab CLI 0.7.4 sequential execution (`colab exec -f`, not a browser Run all; order from `exec.log`, no execution counts), fresh Colab Tesla T4 VM (session `suite-swin-36f8f08-29da`), committed blob fetched at the commit and checked before the VM was allocated; kernel Python 3.13.15, isolated uv-managed CPython 3.10.18 (45 locked packages, setup 12 s), `torch 2.1.2+cpu`, MMSegmentation 1.2.2, MMCV 2.1.0, MMEngine 0.10.7, device `cpu` (by design; the T4 is unused), `restarted: false` | Default synthetic path, every form field at its default (BYOD off) | 1027.7 s | **PASSED** — one pass, no restart, 0 errors; 18/18 code cells in order (cells 4–6, the carried modules, print nothing); 1 checkpoint file digest-verified at `c685fe6767c4`; demonstration scene `not-measurable` (no ground truth); 24 records, 18/6 split, empty-dataset probe rejected; random-head mIoU 0.2857; loss 7.486 → 0.919 → 0.602; adapted mIoU 0.9140 / pixel accuracy 0.9777 beside majority 0.1842 / 0.5527 and colour 0.9754 / 0.9950 (the notebook notes the adapted model does not beat the colour baseline); per-class IoU 0.963 / 0.990 / 0.790; scene 99 mIoU 0.9655; adapter 271 tensors, fresh reload `exact_mask_match` true. Evidence in `docs/execution-evidence/2026-10-10-36f8f08/`: executed notebook SHA-256 `279dce578ce148798b1ce040ab953fb06518c6e9666099fc7b14bf77b00714b1`, `run_summary.json` `e7014265bc30359c5cf2e8656464c97d31fac6631df2eec8ff9d23e671d31f32`, `exec.log` `36cfd8e47f8433f91839642dd4c3c5ac0733fcefcf7c9d4e8ef705870f1a8877`. Not exercised: BYOD, the optional activity, a browser Run all |
+
+The 2026-10-05 review fixes (isolated uv environment with a managed CPython 3.10.18, BYOD dataset branch, colour baseline, corrected masks) change the notebook; the regenerated blob is recorded in the 2026-10-10 Colab T4 row above.
+
+### Removed notebook `swin_segmentation_task_inference.ipynb` (TASK-INFERENCE) — history
 
 | Date (UTC) | Commit / notebook blob | Executor | Path exercised | Wall | Outcome |
 |---|---|---|---|---|---|
@@ -120,16 +130,14 @@ evidence for that carrier and for the OpenMMLab inference path, not for the stan
 
 ## Current status
 
-No clean-runtime execution of the standalone notebook has been recorded yet; the run is **pending**. Static validation
+The current notebook's earlier blob `2a13f383` passed the GitHub Actions run above; the regenerated blob `3cce5e9c2ecf` (commit `36f8f08`) completed one pass with no restart and 0 errors on a fresh Colab Tesla T4 VM on 2026-10-10 (Colab CLI 0.7.4 sequential execution, 18/18 code cells, 1027.7 s, CPU execution by design; adapted mIoU 0.914 beside majority 0.184 and colour 0.975, scene 99 mIoU 0.966, fresh reload exact). Static validation
 (`tools/validate_release_assets.py`), nbformat validation, a `compile()` sweep over every code cell, and the offline
 unit suite passed on the tutorial source at the candidate revision, which is necessary but not sufficient. The
 registry status remains **Candidate** until a reviewer confirms a recorded run against the notebook blob under review
-and an integrator promotes it; promotion is not performed by the builder. Facts a reviewer should weigh:
-`stage_missing_files` was exercised only with an injected downloader in the unit suite (the real fetch from
-`download.openmmlab.com` into a fresh `weights/swin-t-upernet-ade20k/` has not been executed on this carrier);
-`verify_snapshot` was executed once over the real local checkpoint on the builder's workstation (OK); the OpenMMLab
-loader and the single-command pinned install (`--extra-index-url` PyTorch CPU +
-`--find-links` OpenMMLab mmcv, in place of the previous notebook's separate `pip`/`mim` steps) have been validated
-statically only — wheel availability for every pin was checked against the indexes, resolution has not been run; and
-the standalone carrier itself — executing the carried module cells in a runtime that has no repository checkout — has
-been validated statically (parity PASS, carrier probe) but never run.
+and an integrator promotes it; promotion is not performed by the builder. Facts a reviewer should weigh: the
+2026-09-24 run executed the checkpoint fetch, the OpenMMLab loader, the adaptation and the reload with pip in a Python 3.10
+kernel; the current revision installs the same pins with `uv` into a uv-managed CPython 3.10.18 from the 45-package
+hash lock `tutorials/requirements-colab.lock.txt` (`--require-hashes --only-binary :all:`; MMCV 2.1.0 is the prebuilt
+cp310 manylinux wheel from the OpenMMLab page, torch the `+cpu` wheel from the PyTorch CPU index), re-heads a fresh
+model copy, adds a BYOD dataset branch and a colour baseline, and corrects the synthetic masks; all of that ran in the 2026-10-10 Colab T4 row above. A hosted run must record `restarted: false`, the library versions, the adaptation metrics beside both baselines, and a
+Colab run before any entry point calls Colab supported.

@@ -1,0 +1,131 @@
+[colab] Parsing notebook '/home/kurt/colab-runs/swin-segmentation-pipeline-36f8f08-29da05/swin_segmentation_colab_36f8f08_colab-cli-t4.ipynb'...
+[colab] Executing cell 1/18 - Infrastructure: install the locked runtime into an isolated environment...
+{'isolated_environment': '/content/dimer_isolated_env', 'isolated_python': '3.10.18', 'kernel_python': '3.13.15', 'locked_packages': 45, 'setup_seconds': 12}
+[colab] Executing cell 2/18 - Route the remaining cells to the isolated environment...
+Every later code cell now runs in /content/dimer_isolated_env/bin/python (pid 799).
+[colab] Executing cell 3/18 - Infrastructure: record the pinned runtime and the notebook source...
+{'notebook_source': {'repository': 'swin-segmentation-pipeline', 'repository_revision': '42810a87de14110ba5d2306b87cb4a230eba6bce', 'embedded_module': 'src/dimer_swin_segmentation/runtime.py', 'embedded_modules': ['src/dimer_swin_segmentation/metrics.py', 'src/dimer_swin_segmentation/runtime.py', 'src/dimer_swin_segmentation/samples.py'], 'module_sha256': 'f9e4d755d1c7186a9562454cea0a0f2851bc5099de751931b5521a75b6db064e', 'generator': 'build_notebook.py/2.1-swd', 'notebook_spec': '2.2'}, 'python': '3.10.18', 'torch': '2.1.2+cpu', 'numpy': '1.26.4', 'PIL': '11.3.0', 'cuda': False}
+[colab] Executing cell 4/18 - swin_segmentation-12...
+[colab] Executing cell 5/18 - swin_segmentation-14...
+[colab] Executing cell 6/18 - swin_segmentation-16...
+[colab] Executing cell 7/18 - Infrastructure: pin, stage and verify the model...
+{'model_id': 'open-mmlab/mmsegmentation:swin-tiny-patch4-window7-in1k-pre_upernet_8xb2-160k_ade20k-512x512', 'revision': 'c685fe6767c4cadf6b051983ca6208f1b9d1ccb8', 'license': 'Apache-2.0', 'files': 1, 'total_bytes': 240154742}
+{'weights_dir': '/content/weights/swin-t-upernet-ade20k', 'fetched': ['upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth']}
+{'verified_files': 1, 'revision': 'c685fe6767c4cadf6b051983ca6208f1b9d1ccb8'}
+/content/dimer_isolated_env/lib/python3.10/site-packages/mmseg/models/builder.py:36: UserWarning: ``build_loss`` would be deprecated soon, please use ``mmseg.registry.MODELS.build()`` 
+  warnings.warn('``build_loss`` would be deprecated soon, please use '
+/content/dimer_isolated_env/lib/python3.10/site-packages/mmseg/models/losses/cross_entropy_loss.py:250: UserWarning: Default ``avg_non_ignore`` is False, if you would like to ignore the certain label and average loss over non-ignore labels, which is the same with PyTorch official cross_entropy, set ``avg_non_ignore=True``.
+  warnings.warn(
+Loads checkpoint by local backend from path: /content/weights/swin-t-upernet-ade20k/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth
+{'device': 'cpu', 'source': 'local-snapshot'}
+[colab] Executing cell 8/18 - swin_segmentation-20...
+{'python': '3.10.18', 'torch': '2.1.2+cpu', 'numpy': '1.26.4', 'mmsegmentation': '1.2.2', 'mmcv': '2.1.0', 'mmengine': '0.10.7', 'classes': 150, 'checkpoint': 'upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth', 'source': 'local-snapshot', 'device': 'cpu'}
+[colab] Executing cell 9/18 - swin_segmentation-22...
+<isolated cell 4>:49: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  scene = Image.fromarray(array, mode="RGB")
+{'sample': 'synthetic demonstration scene (no ground truth)', 'image_id': 'in_memory_image.png', 'shape': [384, 512], 'classes_present': [0, 1, 2, 22, 36], 'num_classes_present': 5, 'pretrained_classes_top': ['wall', 'building', 'sky', 'painting', 'lamp'], 'saved_mask': 'outputs/swin_segmentation_pretrained_scene_semantic.png'}
+{'pretrained_evaluation': 'not-measurable', 'metrics': [], 'baselines': []}
+<isolated cell 3>:61: DeprecationWarning: 'mode' parameter is deprecated and will be removed in Pillow 13 (2026-10-15)
+  Image.fromarray(self.mask.astype(np.uint8), mode="L").save(target)
+[colab] Executing cell 10/18 - swin_segmentation-24...
+{
+  "schema": "core.dataset.vision.raster-mask",
+  "dataset_kind": "synthetic",
+  "n_records": 24,
+  "class_names": [
+    "background",
+    "road",
+    "structure"
+  ],
+  "observed_classes": [
+    0,
+    1,
+    2
+  ],
+  "skipped_archive_metadata": [],
+  "verdict": "accepted",
+  "findings": [
+    {
+      "input": "empty-dataset-probe",
+      "verdict": "rejected",
+      "message": "Dataset cannot be empty; at least 1 record required."
+    }
+  ],
+  "model_id": "open-mmlab/mmsegmentation:swin-tiny-patch4-window7-in1k-pre_upernet_8xb2-160k_ade20k-512x512",
+  "model_revision": "c685fe6767c4cadf6b051983ca6208f1b9d1ccb8"
+}
+[colab] Executing cell 11/18 - swin_segmentation-26...
+{'total_records': 24, 'train_records': 18, 'val_records': 6, 'classes': ['background', 'road', 'structure'], 'train_ids': ['scene_000', 'scene_001', 'scene_002', 'scene_003'], 'val_ids': ['scene_007', 'scene_009', 'scene_015', 'scene_016', 'scene_018', 'scene_019']}
+[colab] Executing cell 12/18 - swin_segmentation-28...
+Loads checkpoint by local backend from path: /content/weights/swin-t-upernet-ade20k/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth
+{'stage': 'random-head reference (not a baseline)', 'frozen_backbone_params': 27520698, 'classes': ['background', 'road', 'structure'], 'pretrained_pipe_classes': 150, 'miou': 0.2856797751506399, 'pixel_accuracy': 0.3718700408935547, 'verdict': 'sample-sanity'}
+[colab] Executing cell 13/18 - swin_segmentation-30...
+Epoch 1/3 — loss: 7.4856
+Epoch 2/3 — loss: 0.9187
+Epoch 3/3 — loss: 0.6023
+{
+  "epochs": 3,
+  "batch_size": 4,
+  "learning_rate": 0.0001,
+  "seed": 20260915,
+  "freeze_backbone_weights": true,
+  "total_parameters": 59828672,
+  "epoch_losses": [
+    7.48561053276062,
+    0.9187131881713867,
+    0.6022806644439698
+  ],
+  "final_loss": 0.6022806644439698,
+  "device": "cpu",
+  "classes": [
+    "background",
+    "road",
+    "structure"
+  ],
+  "model_id": "open-mmlab/mmsegmentation:swin-tiny-patch4-window7-in1k-pre_upernet_8xb2-160k_ade20k-512x512",
+  "model_revision": "c685fe6767c4cadf6b051983ca6208f1b9d1ccb8"
+}
+[colab] Executing cell 14/18 - swin_segmentation-32...
+{
+  "random_head_miou": 0.2856797751506399,
+  "miou_after": 0.9140169074778246,
+  "pixel_acc_after": 0.9776827494303385,
+  "majority_baseline_miou": 0.1842418246799045,
+  "majority_baseline_acc": 0.5527254740397135,
+  "colour_baseline_miou": 0.9754209483554707,
+  "colour_baseline_acc": 0.9950205485026041,
+  "classes_with_union": 3,
+  "verdict": "sample-sanity"
+}
+class  0 background   IoU 0.9630  inter 838675 px  union 870912 px
+class  1 road         IoU 0.9895  inter 579732 px  union 585891 px
+class  2 structure    IoU 0.7896  inter 119355 px  union 151163 px
+run history (one row per evaluation in this session):
+0 {'learning_rate': 0.0001, 'dataset': 'synthetic', 'miou_after': 0.9140169074778246, 'pixel_acc_after': 0.9776827494303385, 'final_loss': 0.6022806644439698}
+NOTE: the adapted model does not beat the colour baseline; this split cannot show what the learned features add.
+[colab] Executing cell 15/18 - swin_segmentation-34...
+{'image_id': 'in_memory_image.png', 'shape': [512, 512], 'classes_present': [0, 1, 2], 'num_classes_present': 3, 'test_origin': 'generate_scene(99): in neither split', 'mask_file': 'outputs/swin_segmentation_test_scene_adapted_semantic.png', 'test_scene_miou': 0.96550083760402, 'test_scene_pixel_acc': 0.9866371154785156, 'classes_predicted': ['background', 'road', 'structure']}
+[colab] Executing cell 16/18 - swin_segmentation-36...
+{
+  "path": "outputs/swin-segmentation-adapter-v1.pt",
+  "bytes": 239689187,
+  "sha256": "3d692a5d1550de0c907f269835b8e533bea119fac2b794d8e308486a7f219817",
+  "format": "dimer_swin_segmentation_adapter_v1",
+  "class_names": [
+    "background",
+    "road",
+    "structure"
+  ],
+  "tensors": 271,
+  "base_state_digest": "e380ad3e5d94060d89e4b62b5d393cdcc7f1f3406b1d46bcab547d3c276b6064",
+  "model_id": "open-mmlab/mmsegmentation:swin-tiny-patch4-window7-in1k-pre_upernet_8xb2-160k_ade20k-512x512",
+  "model_revision": "c685fe6767c4cadf6b051983ca6208f1b9d1ccb8"
+}
+[colab] Executing cell 17/18 - swin_segmentation-38...
+/content/dimer_isolated_env/lib/python3.10/site-packages/torch/_utils.py:831: UserWarning: TypedStorage is deprecated. It will be removed in the future and UntypedStorage will be the only storage class. This should only matter to you if you are using storages directly.  To access UntypedStorage directly, use tensor.untyped_storage() instead of tensor.storage()
+  return self.fget.__get__(instance, owner)()
+Loads checkpoint by local backend from path: /content/weights/swin-t-upernet-ade20k/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth
+{'reloaded_source': 'artifact:swin-segmentation-adapter-v1.pt', 'reloaded_classes': ['background', 'road', 'structure'], 'adapted_status': True, 'exact_mask_match': True, 'shape': [512, 512]}
+[colab] Executing cell 18/18 - swin_segmentation-40...
+['swin-segmentation-adapter-v1.pt', 'swin_segmentation_class_coverage.csv', 'swin_segmentation_evaluation_report.json', 'swin_segmentation_input_manifest.json', 'swin_segmentation_pre_adapt_evaluation.json', 'swin_segmentation_pretrained_evaluation.json', 'swin_segmentation_pretrained_scene_semantic.png', 'swin_segmentation_provenance.json', 'swin_segmentation_result.json', 'swin_segmentation_test_scene_adapted_semantic.png']
+[colab] Saving notebook with outputs to '/home/kurt/colab-runs/swin-segmentation-pipeline-36f8f08-29da05/swin_segmentation_colab_36f8f08_colab-cli-t4_output.ipynb'...

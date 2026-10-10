@@ -1,6 +1,6 @@
 """Static release-asset validation for the DIMER Swin-T UPerNet semantic-segmentation pipeline.
 
-Checks the STANDALONE tutorial notebook (DIMER Notebook Specification 2.0 §4), the tutorial
+Checks the STANDALONE tutorial notebook (DIMER Notebook Specification 2.2 §4), the tutorial
 registry, model card, README, STATUS.md and weight documentation for source conformance and
 cross-document identity consistency, and runs the generator parity checks (PAR1–PAR3).
 
@@ -46,19 +46,24 @@ EXPECTED_OUTPUTS = (
 # Profile-specific code the notebook must exercise through the carried module's public API.
 CODE_MARKERS = (
     "if sys.version_info[:2] != (3, 10):",
-    "demo_img = tutorial_scene()",
-    "pretrained_result = pipe.predict(demo_img)",
+    "demo_images = [tutorial_scene()]",
+    "pretrained_results = [pipe.predict(image) for image in demo_images]",
+    "byod_image_manifest = validate_inputs(demo_image_path)",
+    "if observed != expected:",
+    "dataset_records, adapt_classes = read_byod_dataset(byod_source)",
+    "colour_baseline = colour_centroid_baseline(train_records, val_records, len(adapt_classes))",
+    "adapt_pipe = DimerSwinSegmenter.from_pretrained(weights_dir=WEIGHTS_DIR)",
     "dataset_records = synthetic_segmentation_dataset(24, seed=DEFAULT_ADAPT_SEED)",
-    "dataset_summary = validate_dataset(dataset_records, ADAPT_CLASSES)",
+    "dataset_summary = validate_dataset(dataset_records, adapt_classes)",
     "train_records, val_records = split_dataset(dataset_records, val_fraction=0.25, seed=42)",
-    "rehead_model(pipe.model, ADAPT_CLASSES, seed=DEFAULT_ADAPT_SEED)",
-    "frozen_params = freeze_backbone(pipe.model)",
-    "pre_adapt_report = pipe.evaluate(val_records, sample_kind='synthetic-val')",
-    "finetune_summary = pipe.finetune(",
-    "post_adapt_report = pipe.evaluate(val_records, sample_kind='synthetic-val')",
+    "rehead_model(adapt_pipe.model, adapt_classes, seed=DEFAULT_ADAPT_SEED)",
+    "frozen_params = freeze_backbone(adapt_pipe.model)",
+    "pre_adapt_report = adapt_pipe.evaluate(val_records, sample_kind=f'{dataset_kind}-val')",
+    "finetune_summary = adapt_pipe.finetune(",
+    "post_adapt_report = adapt_pipe.evaluate(val_records, sample_kind=f'{dataset_kind}-val')",
     "test_img, test_mask = generate_scene(99, seed=DEFAULT_ADAPT_SEED)",
-    "adapted_test_result = pipe.predict(test_img)",
-    "artifact_descriptor = pipe.save_artifact(adapter_path, notes='Swin-T UPerNet 3-class adapted segmentation model')",
+    "adapted_test_result = adapt_pipe.predict(test_img)",
+    "artifact_descriptor = adapt_pipe.save_artifact(adapter_path, notes=f'Swin-T UPerNet {len(adapt_classes)}-class adapted segmentation model ({dataset_kind} data)')",
     "reloaded_pipe = DimerSwinSegmenter.load_artifact(adapter_path, weights_dir=WEIGHTS_DIR)",
     "numpy.testing.assert_array_equal(",
     "writer.writerow(['image_id', 'class_id', 'class_name', 'pixels', 'fraction'])",
@@ -75,7 +80,7 @@ MARKDOWN_MARKERS = (
     "**Trust boundary (MOD12).**",
     "is **not** a `weights_only` load",
     "not publisher authenticity",
-    "**CPython 3.10** Jupyter kernel",
+    "managed **CPython 3.10.18**",
     "**no per-pixel confidence**",
     "the package ships no threshold",
     "majority_class_baseline",
@@ -110,7 +115,7 @@ FORBIDDEN_OUTSIDE_MODULE = (
 # Specification 2.0; see docs/release-verification.md for the release gate.
 # ---------------------------------------------------------------------------
 
-NOTEBOOK_SPEC = "2.0"
+NOTEBOOK_SPEC = "2.2"
 ALLOWED_PROFILES = {"E2E", "ARTIFACT-INFERENCE", "TASK-INFERENCE", "MULTI-CAPABILITY", "SMOKE"}
 STATUS_TOKENS = ("Candidate", "Release-grade")
 PLACEHOLDER = re.compile(r"\b(TODO|TBD|FIXME)\b|Insert text here|Tooltip:", re.I)
@@ -147,10 +152,8 @@ REQUIRED_CARD_HEADINGS = [
 COMMON_CODE_MARKERS = (
     "PINS = [",
     "NOTEBOOK_SOURCE = {",
-    "SKIP_INSTALL = os.environ.get('DIMER_NOTEBOOK_CI_PREINSTALLED') == '1'",
-    "subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', *PINS], check=True)",
-    "importlib.metadata.packages_distributions()",
-    "importlib.invalidate_caches()",
+    "PINS = [",
+    "_ip.input_transformers_cleanup.append(_route_to_isolated_runtime)",
     "platform.python_version()",
     "torch.__version__",
     "MANIFEST = {",
@@ -577,17 +580,17 @@ def _validate_parity(path: Path, notebook: dict, code_cells: list[tuple[int, str
 
 
 def _validate_bootstrap_guard(path: Path, code_cells: list[tuple[int, str, ast.Module]]) -> None:
-    """The stale-import guard must actually raise: `if stale:` whose body raises RuntimeError."""
-    raises = False
-    for _, _, tree in code_cells:
-        for node in ast.walk(tree):
-            if isinstance(node, ast.If) and isinstance(node.test, ast.Name) and node.test.id == "stale":
-                for sub in ast.walk(node):
-                    if isinstance(sub, ast.Raise) and isinstance(sub.exc, ast.Call):
-                        func = sub.exc.func
-                        if isinstance(func, ast.Name) and func.id == "RuntimeError":
-                            raises = True
-    _check(raises, f"{path.name}: install cell must raise RuntimeError when already-imported packages change")
+    """SWS-M1/m4 (RUN1, RUN10, ENV6): nothing is pip-installed into the kernel and no cell asks for a restart. Exactly two
+    kernel cells exist: the isolated install (pinned uv by digest, a uv-managed CPython 3.10 checked by exact version, the
+    exact pins) and the router that sends every later cell to the isolated worker."""
+    kernel_raw = [source for _index, source, _tree in code_cells if "# dimer: kernel cell" in source]
+    _check(len(kernel_raw) == 2, f"{path.name}: exactly two kernel cells (isolated install and router) are expected (SWS-M1)")
+    install = next((k for k in kernel_raw if "MANAGED_PYTHON = " in k), "")
+    for needed in ('"--managed-python"', '"--index-strategy"', "UV_SHA256", 'platform.machine() != "x86_64"', "isolated_version != MANAGED_PYTHON", "MANAGED_PYTHON = '3.10."):
+        _check(needed in install, f"{path.name}: the isolated install cell must use {needed} (SWS-M1)")
+    every = "\n".join(source for _index, source, _tree in code_cells)
+    _check("Restart the runtime" not in every, f"{path.name}: no cell may ask for a runtime restart (SWS-m4)")
+    _check("[sys.executable, '-m', 'pip'" not in every, f"{path.name}: nothing may be pip-installed into the kernel (SWS-m4)")
 
 
 def _validate_notebook_content(
@@ -601,10 +604,12 @@ def _validate_notebook_content(
     _check(not missing, f"{path.name}: missing required source markers: {missing}")
     present = [label for label, pattern in FORBIDDEN_PATTERNS if pattern.search(code)]
     _check(not present, f"{path.name}: forbidden/insecure source: {present}")
-    leaked = [marker for marker in FORBIDDEN_OUTSIDE_MODULE if marker in outside]
+    # The two kernel cells (isolated install and router) are generator-owned; every other cell runs in the isolated worker.
+    kernel = {index for index, source, _tree in code_cells if "# dimer: kernel cell" in source}
+    learner = "\n".join(text for index, text in stripped.items() if index not in embedded and index not in kernel)
+    leaked = [marker for marker in FORBIDDEN_OUTSIDE_MODULE if marker in learner]
     _check(not leaked, f"{path.name}: direct library use outside the carried module cell (G2): {leaked}")
-    install_index = code_cells[0][0]  # the generator-owned install cell is the only place a subprocess may run
-    after_install = "\n".join(text for index, text in stripped.items() if index not in embedded and index != install_index)
+    after_install = learner
     workers = [marker for marker in FORBIDDEN_WORKER_CALLS if marker in after_install]
     _check(not workers, f"{path.name}: worker process or subprocess on the primary path (ST1): {workers}")
     _check(
