@@ -135,8 +135,9 @@ unit suite passed on the tutorial source at the candidate revision, which is nec
 registry status remains **Candidate** until a reviewer confirms a recorded run against the notebook blob under review
 and an integrator promotes it; promotion is not performed by the builder. Facts a reviewer should weigh: the
 2026-09-24 run executed the checkpoint fetch, the OpenMMLab loader, the adaptation and the reload with pip in a Python 3.10
-kernel; the current revision installs the same pins with `uv` into a uv-managed CPython 3.10.18 (pins mode, not
-hash-locked: the PyTorch CPU index and the OpenMMLab wheel page could not be reached to compile a lock), re-heads a fresh
+kernel; the current revision installs the same pins with `uv` into a uv-managed CPython 3.10.18 from the 45-package
+hash lock `tutorials/requirements-colab.lock.txt` (`--require-hashes --only-binary :all:`; MMCV 2.1.0 is the prebuilt
+cp310 manylinux wheel from the OpenMMLab page, torch the `+cpu` wheel from the PyTorch CPU index), re-heads a fresh
 model copy, adds a BYOD dataset branch and a colour baseline, and corrects the synthetic masks, and none of that has run
 yet. A hosted run must record `restarted: false`, the library versions, the adaptation metrics beside both baselines, and a
 Colab run before any entry point calls Colab supported.

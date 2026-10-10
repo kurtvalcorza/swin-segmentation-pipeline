@@ -44,3 +44,8 @@ Suggestions taken: S1 (loss shape described, per-epoch losses in `result.json`),
 2. A hosted **Colab** Run all in a fresh runtime, recorded with `restarted: false`, versions and metrics; only then may the badges call Colab supported. Then re-run the export cell once.
 3. REL12 BYOD for both branches: one compatible and one incompatible input each, path-based in a Jupyter kernel and through the Colab dialog.
 4. Maintainer decisions: `STATUS.md` text (still names the removed notebook); whether to redesign the synthetic task so colour is not enough (needs hosted re-qualification); compiling a hash lock where the PyTorch CPU index and OpenMMLab are reachable.
+
+## Addendum (2026-10-10, relay fixer)
+
+- **Hash lock (SWS-M1, ENV10–ENV16).** `tutorials/requirements-colab.lock.txt` is compiled from `tools/pins.txt` with `uv pip compile --generate-hashes --only-binary :all:` for CPython 3.10 / manylinux_2_28 x86_64 (45 packages). The install cell now uses it with `--require-hashes --only-binary :all:`, passing the pins' PyTorch CPU index and OpenMMLab find-links page after PyPI. Installed in a clean uv-managed CPython 3.10.18 on Linux: no source build; MMCV 2.1.0 resolves to the prebuilt cp310 wheel and `mmcv.ops` loads. This closes the "compile a hash lock" item in Remaining gates 4.
+- **Colab stubs.** The isolated worker's `google`, `google.colab` and `google.colab.files` stubs now carry a `ModuleSpec` (`_stub` helper ported from rtdetr-detection-pipeline 00130c3); `tests/test_worker_colab_stubs.py` checks it.

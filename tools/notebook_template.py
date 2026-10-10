@@ -17,9 +17,9 @@ TEMPLATE = {
     "profile": "E2E",
     "mode": "GUIDED",
     # SWS-M1/m4 (NOTEBOOK_SPEC 2.2 §5): the qualified OpenMMLab stack needs CPython 3.10, which pip cannot provide. Section 1
-    # has uv provision a managed CPython 3.10.18, installs the exact pins of tools/pins.txt there (pins mode: the PyTorch
-    # CPU index and the OpenMMLab find-links page are needed, so no hash lock is carried yet) and routes every later cell to
-    # a persistent worker in it. The kernel's own Python does not matter.
+    # has uv provision a managed CPython 3.10.18, installs the hash lock compiled from tools/pins.txt there
+    # (--require-hashes --only-binary :all:, with the PyTorch CPU index and the OpenMMLab find-links page the pins name)
+    # and routes every later cell to a persistent worker in it. The kernel's own Python does not matter.
     "isolated_runtime": True,
     "infrastructure_labels": True,
     "managed_python": "3.10.18",
@@ -29,7 +29,7 @@ TEMPLATE = {
         "bytes": 20081404,
         "sha256": "aee9802f46bae436bd91751bb33ddeb379ef1596b5c19df193219d545d244b60",
     },
-    "lock": None,
+    "lock": "tutorials/requirements-colab.lock.txt",
     "pipeline_class": "DimerSwinSegmenter",
     "weights_key": "swin-t-upernet-ade20k",
     "modules": ["metrics.py", "samples.py", "runtime.py"],
@@ -178,19 +178,19 @@ TEMPLATE = {
             "| **`IGNORE_INDEX`** | The mask value `255`: pixels that are not scored or trained on. |\n"
             "| **`.pth` trust boundary** | The checkpoint is a PyTorch pickle that can run code when loaded; the digest check fixes its bytes, not its author. |\n"
             "| **Adapter artifact** | The `.pt` file holding the adapted weights and class names, reloaded with `weights_only=True`. |\n"
-            "| **Isolated environment** | A separate Python 3.10 with the exact pins, in which every learner cell runs. |\n\n"
+            "| **Isolated environment** | A separate Python 3.10 built from the hash-locked pins, in which every learner cell runs. |\n\n"
             "</details>"
         ),
     ],
     "prerequisites": [
-        "- **Runtime:** a fresh **Linux x86_64** runtime; the kernel's own Python version does not matter. The qualified OpenMMLab stack — torch 2.1.2 (CPU build), MMCV 2.1.0, MMEngine 0.10.7, MMSegmentation 1.2.2, NumPy 1.26.4 — has prebuilt wheels for Python 3.10 only, so Section 1 has `uv` provision a managed **CPython 3.10.18**, installs the exact pins there and runs every later cell in that interpreter (Section 4 asserts it). The recorded runtime is a Python 3.10 Jupyter kernel on Linux (GitHub Actions); Google Colab (Python 3.12 kernel) is expected to work the same way but **no Colab run has been recorded yet**. CPU is the default and only qualified path; no GPU is required.",
+        "- **Runtime:** a fresh **Linux x86_64** runtime; the kernel's own Python version does not matter. The qualified OpenMMLab stack — torch 2.1.2 (CPU build), MMCV 2.1.0, MMEngine 0.10.7, MMSegmentation 1.2.2, NumPy 1.26.4 — has prebuilt wheels for Python 3.10 only, so Section 1 has `uv` provision a managed **CPython 3.10.18**, installs the hash-locked pins there and runs every later cell in that interpreter (Section 4 asserts it). The recorded runtime is a Python 3.10 Jupyter kernel on Linux (GitHub Actions); Google Colab (Python 3.12 kernel) is expected to work the same way but **no Colab run has been recorded yet**. CPU is the default and only qualified path; no GPU is required.",
         "- **External package indexes:** the isolated install reads the PyTorch CPU index (`download.pytorch.org`) and the OpenMMLab wheel page (`download.openmmlab.com`) besides PyPI.",
         "- **Knowledge:** basic Python and PIL; dense semantic class masks; intersection-over-union (IoU) and pixel accuracy.",
         "- **Data:** the default path generates everything deterministically in code by `samples.py` (no dataset download): one 512×384 demonstration scene and a 24-image custom segmentation dataset with exact masks. `USE_ADE20K_FIXTURES` (off) fetches two ADE20K validation images with their annotations from a pinned Hugging Face commit, verified by SHA-256, and scores the pretrained model on them. Two BYOD branches are off by default: `USE_BYOD_IMAGE` (one image, by `BYOD_IMAGE_PATH` or the Colab upload) and `USE_BYOD_DATASET` (a folder or `.zip` with `images/`, `masks/` and `classes.txt`; see Section 6). Do not upload confidential or restricted imagery to a hosted runtime unless you are authorised to process it there; uploads stay in this runtime.",
     ],
     "run_all": (
         "Selecting **Run all** in a fresh Linux x86_64 runtime builds an isolated environment with a uv-managed CPython 3.10.18 and the "
-        "exact pins (the kernel's own Python and packages are left alone, so no restart is needed), stages and digest-verifies the pinned checkpoint, "
+        "hash-locked pins (the kernel's own Python and packages are left alone, so no restart is needed), stages and digest-verifies the pinned checkpoint, "
         "runs pretrained ADE20K inference on a demonstration scene, validates the 24-image segmentation adaptation dataset, splits it into "
         "train and validation sets, re-heads a fresh copy of the pretrained model, **runs the bounded fine-tune with frozen backbone**, evaluates on "
         "the held-out split beside a majority and a colour baseline, runs inference on an unseen test scene, exports the adapted artifact, reloads it from disk to verify numeric consistency, "
