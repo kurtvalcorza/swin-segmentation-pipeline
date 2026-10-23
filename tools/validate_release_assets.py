@@ -41,7 +41,7 @@ EXPECTED_OUTPUTS = (
     "outputs/swin_segmentation_evaluation_report.json",
     "outputs/swin_segmentation_result.json",
     "outputs/swin_segmentation_class_coverage.csv",
-    "outputs/swin-segmentation-adapter-v1.pt",
+    "outputs/swin-segmentation-adapter-v2.safetensors",
 )
 # Profile-specific code the notebook must exercise through the carried module's public API.
 CODE_MARKERS = (

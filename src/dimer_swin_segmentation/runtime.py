@@ -34,7 +34,12 @@ MODEL_SPEC = {
     "num_classes": 150,
 }
 
-ARTIFACT_FORMAT = "dimer_swin_segmentation_adapter_v1"
+# ARTIFACT_SPEC 2.0 SER7/SER10/SER11: v2 is a safetensors file (no pickle). The adapted state dict is the tensor
+# payload and every non-tensor field is plain data in the header metadata, under ARTIFACT_METADATA_KEY as sorted-key
+# compact JSON. v1 was a torch.save pickle; none was ever published as a release, so v1 is not read.
+ARTIFACT_FORMAT = "dimer_swin_segmentation_adapter_v2"
+ARTIFACT_METADATA_KEY = "dimer_artifact"
+ARTIFACT_FILENAME = "swin-segmentation-adapter-v2.safetensors"
 DEFAULT_ADAPT_EPOCHS = 3
 DEFAULT_ADAPT_BATCH_SIZE = 4
 DEFAULT_ADAPT_LEARNING_RATE = 1e-4
@@ -663,35 +668,70 @@ class DimerSwinSegmenter:
         )
 
     def save_artifact(self, path: str | os.PathLike, *, notes: str | None = None) -> dict[str, Any]:
-        """Write adapted weights, vocabulary, and provenance as a portable .pt artifact."""
-        import torch
+        """Write adapted weights, vocabulary, and provenance as a portable safetensors artifact (no pickle)."""
+        from safetensors.torch import save as safetensors_save
 
         target = Path(path)
         target.parent.mkdir(parents=True, exist_ok=True)
-        payload = {
+        metadata = {
             "format": ARTIFACT_FORMAT,
             "model_id": MODEL_ID,
             "model_revision": MODEL_REVISION,
             "model_key": MODEL_KEY,
             "checkpoint_sha256": MODEL_SPEC["checkpoint_sha256"],
             "class_names": list(self.classes),
-            "adapted": self.adapted,
+            "adapted": bool(self.adapted),
             "base_state_digest": self.base_state_digest,
             "notes": notes or "",
-            "state_dict": {k: v.detach().cpu() for k, v in self.model.state_dict().items()},
         }
-        torch.save(payload, target)
+        # Independent contiguous CPU copies: safetensors refuses tensors that share storage.
+        state_dict = {k: v.detach().cpu().contiguous().clone() for k, v in self.model.state_dict().items()}
+        # One header metadata key, so the header bytes do not depend on the safetensors writer's map ordering; the
+        # JSON inside is sorted-key and compact, so identical inputs give identical bytes.
+        header_metadata = {ARTIFACT_METADATA_KEY: json.dumps(metadata, sort_keys=True, separators=(",", ":"))}
+        target.write_bytes(safetensors_save(state_dict, metadata=header_metadata))
         return {
             "path": str(target),
             "bytes": target.stat().st_size,
             "sha256": _sha256(target),
             "format": ARTIFACT_FORMAT,
+            "serialization": "safetensors",
             "class_names": list(self.classes),
-            "tensors": len(payload["state_dict"]),
+            "tensors": len(state_dict),
             "base_state_digest": self.base_state_digest,
             "model_id": MODEL_ID,
             "model_revision": MODEL_REVISION,
         }
+
+    @staticmethod
+    def read_artifact(path: str | os.PathLike) -> tuple[dict[str, Any], dict[str, Any]]:
+        """Read a v2 artifact with safetensors (never pickle) and return its metadata and CPU state dict.
+
+        Raises ValueError for a file that is not a well-formed safetensors file or carries no valid DIMER metadata.
+        """
+        from safetensors import SafetensorError
+        from safetensors.torch import load as safetensors_load
+
+        target = Path(path)
+        if not target.is_file():
+            raise FileNotFoundError(f"Artifact not found: {target}")
+        raw = target.read_bytes()
+        try:
+            state_dict = safetensors_load(raw)
+        except (SafetensorError, ValueError, OSError) as exc:
+            raise ValueError(f"artifact {target.name} is not a readable safetensors file: {exc}") from exc
+        header_len = int.from_bytes(raw[:8], "little")
+        header = json.loads(raw[8 : 8 + header_len])
+        encoded = (header.get("__metadata__") or {}).get(ARTIFACT_METADATA_KEY)
+        if encoded is None:
+            raise ValueError(f"artifact format None != {ARTIFACT_FORMAT!r} (no {ARTIFACT_METADATA_KEY!r} metadata)")
+        try:
+            metadata = json.loads(encoded)
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"artifact {ARTIFACT_METADATA_KEY!r} metadata is not JSON: {exc}") from exc
+        if not isinstance(metadata, dict):
+            raise ValueError(f"artifact {ARTIFACT_METADATA_KEY!r} metadata is not a JSON object")
+        return metadata, state_dict
 
     @classmethod
     def load_artifact(
@@ -701,13 +741,9 @@ class DimerSwinSegmenter:
         weights_dir: str | os.PathLike | None = None,
         device: str = "cpu",
     ) -> DimerSwinSegmenter:
-        """Rebuild an adapted segmentation pipeline from an exported .pt artifact."""
-        import torch
-
+        """Rebuild an adapted segmentation pipeline from an exported safetensors artifact."""
         target = Path(path)
-        if not target.is_file():
-            raise FileNotFoundError(f"Artifact not found: {target}")
-        payload = torch.load(target, map_location="cpu", weights_only=True)
+        payload, state_dict = cls.read_artifact(target)
         if payload.get("format") != ARTIFACT_FORMAT:
             raise ValueError(f"artifact format {payload.get('format')!r} != {ARTIFACT_FORMAT!r}")
         if payload.get("model_id") != MODEL_ID or payload.get("model_revision") != MODEL_REVISION:
@@ -717,14 +753,16 @@ class DimerSwinSegmenter:
             )
         if payload.get("model_key") != MODEL_KEY:
             raise ValueError(f"artifact model_key {payload.get('model_key')!r} != {MODEL_KEY!r}")
+        names = payload.get("class_names")
+        if not isinstance(names, list) or not names or not all(isinstance(n, str) for n in names):
+            raise ValueError(f"artifact class_names must be a non-empty list of strings, got {names!r}")
 
-        names = tuple(payload["class_names"])
         pipe = cls.from_pretrained(
             device=device,
             weights_dir=weights_dir,
-            class_names=names,
+            class_names=tuple(names),
         )
-        pipe.model.load_state_dict(payload["state_dict"], strict=True)
+        pipe.model.load_state_dict(state_dict, strict=True)
         pipe.adapted = True
         pipe.source = f"artifact:{target.name}"
         return pipe

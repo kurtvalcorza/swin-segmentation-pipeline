@@ -59,7 +59,7 @@ jobs:
           test -s outputs/swin_segmentation_evaluation_report.json
           test -s outputs/swin_segmentation_result.json
           test -s outputs/swin_segmentation_class_coverage.csv
-          test -s outputs/swin-segmentation-adapter-v1.pt
+          test -s outputs/swin-segmentation-adapter-v2.safetensors
           python - <<'PY'
           import json
           from pathlib import Path

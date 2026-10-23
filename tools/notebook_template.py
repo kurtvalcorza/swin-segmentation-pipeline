@@ -81,7 +81,7 @@ TEMPLATE = {
         "partitions into train and validation splits, re-heads the decode and auxiliary heads of a fresh copy of the pretrained model "
         "(the pretrained 150-class model stays available), freezes the 28.3M Swin-T backbone, runs a bounded AdamW fine-tune loop, "
         "evaluates post-adaptation mIoU and pixel accuracy against a majority baseline and a non-learned colour baseline, runs "
-        "inference on an unseen test scene, exports `swin-segmentation-adapter-v1.pt`, "
+        "inference on an unseen test scene, exports `swin-segmentation-adapter-v2.safetensors`, "
         "and reloads the artifact from disk asserting exact numerical mask agreement.\n\n"
         "**Trust boundary (MOD12).** The base checkpoint is a code-capable PyTorch `.pth` serialization. The carried `verify_snapshot` "
         "re-hashes it against the inline manifest and `MODEL_SPEC` before the pinned MMSegmentation loader deserializes it inside "
@@ -139,9 +139,9 @@ TEMPLATE = {
             "| Stage | Input | Model / system | Output |\n"
             "|---|---|---|---|\n"
             "| **Pretrained inference** | one RGB image | MMSegmentation 1.2.2 test pipeline (resize to the 512 scale, normalise) → Swin-T backbone → UPerNet decode head (150 classes) | a 2-D class-index mask the size of the image |\n"
-            "| **Adaptation** | 18 training image/mask pairs over 3 classes | a fresh model copy: new 3-class `conv_seg` layers in the decode and auxiliary heads, backbone frozen, AdamW + cross-entropy | an adapted model and a `.pt` adapter artifact |\n"
+            "| **Adaptation** | 18 training image/mask pairs over 3 classes | a fresh model copy: new 3-class `conv_seg` layers in the decode and auxiliary heads, backbone frozen, AdamW + cross-entropy | an adapted model and a `.safetensors` adapter artifact |\n"
             "| **Evaluation** | 6 held-out pairs | the adapted model, a majority-class constant, a colour nearest-centroid rule | mIoU, pixel accuracy, per-class IoU |\n"
-            "| **Reload** | the artifact file | `load_artifact` with `weights_only=True` | a mask identical to the in-memory model's |\n\n"
+            "| **Reload** | the artifact file | `load_artifact` with `safetensors` (no pickle) | a mask identical to the in-memory model's |\n\n"
             "## Roadmap\n\n"
             "| Section | Tag | What happens | What you read |\n"
             "|---|---|---|---|\n"
@@ -177,7 +177,7 @@ TEMPLATE = {
             "| **Random-head reference** | The re-headed model before any training; it says nothing about the pretrained features. |\n"
             "| **`IGNORE_INDEX`** | The mask value `255`: pixels that are not scored or trained on. |\n"
             "| **`.pth` trust boundary** | The checkpoint is a PyTorch pickle that can run code when loaded; the digest check fixes its bytes, not its author. |\n"
-            "| **Adapter artifact** | The `.pt` file holding the adapted weights and class names, reloaded with `weights_only=True`. |\n"
+            "| **Adapter artifact** | The `.safetensors` file holding the adapted weights as tensors and the class names and provenance as plain JSON metadata; reading it never runs code. |\n"
             "| **Isolated environment** | A separate Python 3.10 built from the hash-locked pins, in which every learner cell runs. |\n\n"
             "</details>"
         ),
@@ -569,10 +569,10 @@ TEMPLATE = {
                 "imagery.</details>\n\n"
                 "## 12. Export the portable adapted artifact · [Engineering]\n\n"
                 "`adapt_pipe.save_artifact` exports the adapted weights, class vocabulary, base model identity and provenance as a "
-                "standalone `.pt` artifact (`outputs/swin-segmentation-adapter-v1.pt`)."
+                "standalone `safetensors` artifact (`outputs/swin-segmentation-adapter-v2.safetensors`): the tensors are the adapted state dict and every other field is plain JSON in the file header, so the artifact holds no pickle and loading it cannot run code."
             ),
             "code": (
-                "adapter_path = Path('outputs/swin-segmentation-adapter-v1.pt')\n"
+                "adapter_path = Path('outputs/swin-segmentation-adapter-v2.safetensors')\n"
                 "artifact_descriptor = adapt_pipe.save_artifact(adapter_path, notes=f'Swin-T UPerNet {{len(adapt_classes)}}-class adapted segmentation model ({{dataset_kind}} data)')\n"
                 "print(json.dumps(artifact_descriptor, indent=2))"
             ),
@@ -581,7 +581,7 @@ TEMPLATE = {
         {
             "md": (
                 "## 13. Fresh reload & numerical verification · [Engineering]\n\n"
-                "`DimerSwinSegmenter.load_artifact` reloads the exported weights with `weights_only=True`, constructs a fresh segmenter "
+                "`DimerSwinSegmenter.load_artifact` reloads the exported weights with `safetensors` (no pickle), checks the format, base model identity and model key, constructs a fresh segmenter "
                 "and the cell asserts that its mask on the test scene is identical to the adapted model's "
                 "(`numpy.testing.assert_array_equal`)."
             ),
