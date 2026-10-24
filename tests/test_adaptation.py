@@ -291,11 +291,19 @@ def test_artifact_load_rejects_corrupt_or_mismatched(tmp_path: Path) -> None:
             )
         )
 
+    with pytest.raises(ValueError, match="artifact checkpoint_sha256"):
+        DimerSwinSegmenter.load_artifact(
+            _write_safetensors(
+                tmp_path / "bad_checkpoint.safetensors",
+                {**identity, "model_key": MODEL_KEY, "checkpoint_sha256": "0" * 64},
+            )
+        )
+
     with pytest.raises(ValueError, match="class_names"):
         DimerSwinSegmenter.load_artifact(
             _write_safetensors(
                 tmp_path / "bad_classes.safetensors",
-                {**identity, "model_key": MODEL_KEY},
+                {**identity, "model_key": MODEL_KEY, "checkpoint_sha256": MODEL_SPEC["checkpoint_sha256"]},
             )
         )
 

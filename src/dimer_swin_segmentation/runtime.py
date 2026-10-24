@@ -753,6 +753,11 @@ class DimerSwinSegmenter:
             )
         if payload.get("model_key") != MODEL_KEY:
             raise ValueError(f"artifact model_key {payload.get('model_key')!r} != {MODEL_KEY!r}")
+        if payload.get("checkpoint_sha256") != MODEL_SPEC["checkpoint_sha256"]:
+            raise ValueError(
+                f"artifact checkpoint_sha256 {payload.get('checkpoint_sha256')!r} != pinned "
+                f"{MODEL_SPEC['checkpoint_sha256']!r}"
+            )
         names = payload.get("class_names")
         if not isinstance(names, list) or not names or not all(isinstance(n, str) for n in names):
             raise ValueError(f"artifact class_names must be a non-empty list of strings, got {names!r}")
