@@ -1,5 +1,7 @@
 # Release verification
 
+**Pending hosted run (REL14).** On 2026-10-24 the notebook `tutorials/swin_segmentation_colab.ipynb` was regenerated from code `64a9ac5` (blob `25c5ed837f0b`) so that the segmenter is built from the packaged config with no checkpoint and served from the pinned safetensors conversion `upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.safetensors` (SHA-256 `a91744b53b1b…`, loaded with `load_state_dict(strict=True)`) instead of MMEngine's pickle load of the `.pth`; no hosted run of this blob is recorded yet, so it is Candidate until one is (REL14). The runs recorded below are history for earlier blobs and are not evidence for this one.
+
 `tutorials/swin_segmentation_task_inference.ipynb` (`TASK-INFERENCE`, standalone) is a **release candidate** until
 the exact notebook revision has executed top-to-bottom in a clean supported runtime. Unit tests, JSON validation,
 code-cell compilation, and `tools/validate_release_assets.py` are necessary checks but are **not** runtime evidence
@@ -130,7 +132,7 @@ evidence for that carrier and for the OpenMMLab inference path, not for the stan
 
 ## Current status
 
-The current notebook's earlier blob `2a13f383` passed the GitHub Actions run above; the regenerated blob `3cce5e9c2ecf` (commit `36f8f08`) completed one pass with no restart and 0 errors on a fresh Colab Tesla T4 VM on 2026-10-10 (Colab CLI 0.7.4 sequential execution, 18/18 code cells, 1027.7 s, CPU execution by design; adapted mIoU 0.914 beside majority 0.184 and colour 0.975, scene 99 mIoU 0.966, fresh reload exact). Static validation
+Before the 2026-10-24 safetensors regeneration (blob `25c5ed837f0b`, no hosted run yet), the notebook's earlier blob `2a13f383` passed the GitHub Actions run above; the regenerated blob `3cce5e9c2ecf` (commit `36f8f08`) completed one pass with no restart and 0 errors on a fresh Colab Tesla T4 VM on 2026-10-10 (Colab CLI 0.7.4 sequential execution, 18/18 code cells, 1027.7 s, CPU execution by design; adapted mIoU 0.914 beside majority 0.184 and colour 0.975, scene 99 mIoU 0.966, fresh reload exact). Static validation
 (`tools/validate_release_assets.py`), nbformat validation, a `compile()` sweep over every code cell, and the offline
 unit suite passed on the tutorial source at the candidate revision, which is necessary but not sufficient. The
 registry status remains **Candidate** until a reviewer confirms a recorded run against the notebook blob under review
