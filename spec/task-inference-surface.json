@@ -31,6 +31,9 @@
     "checkpointSizeBytes": 240154742,
     "checkpointSha256": "e380ad3e5d94060d89e4b62b5d393cdcc7f1f3406b1d46bcab547d3c276b6064",
     "checkpointVerification": "REQUIRED_BEFORE_DESERIALIZATION",
+    "servedWeightsFile": "upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.safetensors",
+    "servedWeightsSha256": "a91744b53b1bb48e12ba2fc64a6a0bee57c42ae6007b004b5806a9b4b0d31cf9",
+    "servedWeightsLoad": "init_model(config, None) + load_state_dict(safetensors, strict=True)",
     "numClasses": 150
   },
   "input": {
@@ -53,7 +56,7 @@
     "sampleEvidenceOnly": true
   },
   "security": {
-    "checkpointSerialization": "PyTorch .pth; code-capable serialization",
+    "checkpointSerialization": "PyTorch .pth (pickle) as conversion source only, read once with torch.load(weights_only=True); served as safetensors",
     "digestMeaning": "byte identity only; not publisher authenticity",
     "runtimeSecretsRequired": false
   },

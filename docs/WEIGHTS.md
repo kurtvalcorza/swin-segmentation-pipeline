@@ -12,18 +12,24 @@ own `MODEL_SPEC`; the two must agree and `verify_snapshot` refuses a manifest th
 | Manifest | `weights/swin-t-upernet-ade20k/dimer-base-manifest.json` — 1 file, 240,154,742 bytes in total |
 | `upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth` | 240,154,742 bytes, SHA-256 `e380ad3e5d94060d89e4b62b5d393cdcc7f1f3406b1d46bcab547d3c276b6064` (equal to `MODEL_SPEC["checkpoint_sha256"]`) |
 | Weights licence | Apache-2.0 (OpenMMLab MMSegmentation model zoo) |
-| Format / trust boundary | code-capable PyTorch `.pth`; size and SHA-256 are verified **before** the pinned MMSegmentation loader (`mmseg.apis.init_model` → `mmengine` checkpoint loading, not a `weights_only` load) deserializes it. A matching digest proves byte identity with the pinned distribution, not publisher authenticity. |
+| Format / trust boundary | the upstream `.pth` is a pickled PyTorch checkpoint and is only the conversion source. After its size and SHA-256 are verified, `convert_checkpoint` reads it once with `torch.load(..., weights_only=True)`, takes `state_dict` (dropping the `meta` training record) with mmengine's own key handling (strip a leading `module.`; none of the 271 keys carries one), checks its `meta` `CLASSES`/`PALETTE` against the pinned MMSegmentation `ADE20KDataset.METAINFO`, loads it into the config-built model with `strict=True`, and writes a safetensors file. A matching digest proves byte identity with the pinned distribution, not publisher authenticity. |
+| Served file: `upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.safetensors` | 240,079,592 bytes, SHA-256 `a91744b53b1bb48e12ba2fc64a6a0bee57c42ae6007b004b5806a9b4b0d31cf9` (`CONVERTED_SHA256`; byte-reproducible: two conversions hash the same). Written next to the `.pth` in whichever directory the acquisition path uses (below); git-ignored (`weights/**/*.safetensors`). The segmenter is built with `init_model(config, None)` (no checkpoint, so MMEngine's pickle loader is never called), given the checkpoint's class names and palette, and loaded from this file with `load_state_dict(strict=True)`. |
 
 ## Acquisition paths
 
 - **Fleet snapshot path (standalone notebook, `from_pretrained(weights_dir=…, allow_download=…)`):**
   `stage_missing_files` fetches only manifest entries that are absent (the checkpoint, from the pinned URL above,
   and only with `allow_download=True`), `verify_snapshot` re-hashes every entry against the manifest and
-  `MODEL_SPEC`, then `DimerSwinSegmenter(checkpoint=<verified .pth>, source="local-snapshot")` runs the unchanged
-  OpenMMLab init on the packaged config. The checkpoint is git-ignored (`weights/**/*.pth`); only the manifest is
-  committed.
-- **Cache path (`DimerSwinSegmenter(cache_dir=…)`):** `acquire_verified_checkpoint` downloads into
-  `.dimer-models/` and verifies size + SHA-256 against `MODEL_SPEC` before use (`source="openmmlab-cache"`).
+  `MODEL_SPEC`, and `convert_checkpoint` writes the served safetensors file into the same directory; then
+  `DimerSwinSegmenter(checkpoint=<converted .safetensors>, source="local-snapshot")` serves it. Once the converted
+  file exists, the `.pth` is not staged, verified or read again. Both weight files are git-ignored
+  (`weights/**/*.pth`, `weights/**/*.safetensors`); only the manifest is committed. In a repository checkout this
+  directory is `weights/swin-t-upernet-ade20k/`; the standalone notebook uses `./weights/swin-t-upernet-ade20k/` under
+  its working directory.
+- **Cache path (`DimerSwinSegmenter(cache_dir=…)`, used by the CLI):** `acquire_converted_weights` serves the
+  converted file from `.dimer-models/` when it is there; otherwise `acquire_verified_checkpoint` downloads the `.pth`
+  into `.dimer-models/`, verifies size + SHA-256 against `MODEL_SPEC`, and `convert_checkpoint` converts it there
+  (`source="openmmlab-cache"`).
 
 ## Adaptation lineage (separate, not hosted)
 

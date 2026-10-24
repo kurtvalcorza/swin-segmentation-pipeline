@@ -1,6 +1,8 @@
 from .metrics import ade20k_raw_to_indices, majority_class_baseline, semantic_iou
 from .runtime import (
     ARTIFACT_FORMAT,
+    CONVERTED_SHA256,
+    CONVERTED_WEIGHTS_FILE,
     DEFAULT_ADAPT_BATCH_SIZE,
     DEFAULT_ADAPT_EPOCHS,
     DEFAULT_ADAPT_LEARNING_RATE,
@@ -14,12 +16,14 @@ from .runtime import (
     MODEL_SPEC,
     DimerSwinSegmenter,
     SegmentationResult,
+    convert_checkpoint,
     evaluation_report,
     freeze_backbone,
     rehead_model,
     stage_missing_files,
     validate_image,
     validate_inputs,
+    verify_converted,
     verify_snapshot,
 )
 from .samples import (
@@ -41,6 +45,8 @@ __all__ = [
     "ADAPT_SCENE_SIZE",
     "ADE20K_SCENE_SIZE",
     "ARTIFACT_FORMAT",
+    "CONVERTED_SHA256",
+    "CONVERTED_WEIGHTS_FILE",
     "DEFAULT_ADAPT_BATCH_SIZE",
     "DEFAULT_ADAPT_EPOCHS",
     "DEFAULT_ADAPT_LEARNING_RATE",
@@ -56,6 +62,7 @@ __all__ = [
     "SegmentationResult",
     "ade20k_raw_to_indices",
     "colour_centroid_baseline",
+    "convert_checkpoint",
     "extract_byod_zip",
     "evaluation_report",
     "freeze_backbone",
@@ -71,5 +78,6 @@ __all__ = [
     "validate_dataset",
     "validate_image",
     "validate_inputs",
+    "verify_converted",
     "verify_snapshot",
 ]

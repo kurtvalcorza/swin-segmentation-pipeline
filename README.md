@@ -28,9 +28,10 @@ The repository exposes a real, public, CPU-capable pretrained inference path:
 - **Checkpoint:** 240,154,742 bytes; SHA-256 `e380ad3e5d94060d89e4b62b5d393cdcc7f1f3406b1d46bcab547d3c276b6064`
 - **Input validation:** readable image, positive dimensions, maximum 64,000,000 pixels
 - **Outputs:** two-dimensional `uint8` semantic class-index mask over the 150 ADE20K classes
-- **Checkpoint handling:** exact size and SHA-256 are verified before the upstream `.pth` file is deserialized
+- **Checkpoint handling:** exact size and SHA-256 of the upstream `.pth` are verified, then it is read once with `torch.load(..., weights_only=True)` and converted into `upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.safetensors` (240,079,592 bytes, SHA-256 `a91744b53b1bb48e12ba2fc64a6a0bee57c42ae6007b004b5806a9b4b0d31cf9`, pinned as `CONVERTED_SHA256`)
+- **Served file:** the segmenter is built from the packaged config with no checkpoint and loaded from the safetensors file with `load_state_dict(strict=True)`; MMSegmentation's pickle loader is never called, and the `.pth` is not read again once the conversion exists
 
-The `.pth` format is code-capable PyTorch serialization. Digest verification proves byte identity against the pinned distribution; it does not prove publisher authenticity or make an otherwise untrusted checkpoint safe.
+The upstream `.pth` is a pickled PyTorch checkpoint; the `weights_only=True` read refuses arbitrary pickled objects, and the served safetensors file holds tensors only. Digest verification proves byte identity against the pinned distribution; it does not prove publisher authenticity. The adapter artifact the tutorial exports (`swin-segmentation-adapter-v1.pt`) is still a `torch.save` file, reloaded with `weights_only=True`.
 
 Machine-readable capability metadata is in [`spec/task-inference-surface.json`](spec/task-inference-surface.json).
 

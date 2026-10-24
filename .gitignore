@@ -8,3 +8,4 @@ __pycache__/
 
 # Model weights are pulled locally (see weights/); never commit checkpoints
 weights/**/*.pth
+weights/**/*.safetensors

@@ -78,7 +78,8 @@ MARKDOWN_MARKERS = (
     "**Capability:** pretrained ADE20K-150 semantic segmentation",
     "**The default path really adapts the model:**",
     "**Trust boundary (MOD12).**",
-    "is **not** a `weights_only` load",
+    "once with `torch.load(..., weights_only=True)`",
+    "served only from the converted safetensors file",
     "not publisher authenticity",
     "managed **CPython 3.10.18**",
     "**no per-pixel confidence**",
@@ -344,9 +345,11 @@ def validate_identity_consistency() -> None:
 WEIGHT_DOCS = ("README.md", "MODEL_CARD.md", "docs/WEIGHTS.md")
 EXTERNAL_WEIGHT_BYTES: dict[int, str] = {
     240_144_566: "SwinTransformer/storage v1.0.1 asset upernet_swin_tiny_patch4_window7_512x512.pth",
+    240_079_592: "the served safetensors conversion of the manifest checkpoint",
 }
 EXTERNAL_WEIGHT_DIGESTS: dict[str, str] = {
     "c26408bb5ddee935dcc709ad7815fa039f2db2b41134cd702da7da277d1a7d89": "SwinTransformer/storage v1.0.1 asset upernet_swin_tiny_patch4_window7_512x512.pth",
+    "a91744b53b1bb48e12ba2fc64a6a0bee57c42ae6007b004b5806a9b4b0d31cf9": "runtime.CONVERTED_SHA256: the served safetensors conversion of the manifest checkpoint",
 }
 _DIGEST = re.compile(r"(?<![0-9a-fA-F])[0-9a-f]{64}(?![0-9a-fA-F])")
 _GROUPED = r"(\d{1,3}(?:[,\u202f\u00a0 ]\d{3})+|\d+)"

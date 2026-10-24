@@ -4,9 +4,10 @@ import hashlib
 import importlib.metadata
 import json
 import os
+import re
 import tempfile
 import urllib.request
-from collections.abc import Callable, Iterable, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -88,6 +89,16 @@ MODEL_KEY = "swin-t-upernet-ade20k"
 DEFAULT_WEIGHTS_DIR = Path(__file__).resolve().parents[2] / "weights" / MODEL_KEY
 MANIFEST_NAME = "dimer-base-manifest.json"
 WEIGHTS_FILE = "upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth"
+# The served file: the checkpoint's state dict, converted once into safetensors (no code, no pickle). The
+# pickled `.pth` above is only the conversion source; once this file exists, the source is never read again.
+CONVERTED_WEIGHTS_FILE = (
+    "upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.safetensors"
+)
+CONVERTED_SHA256 = "a91744b53b1bb48e12ba2fc64a6a0bee57c42ae6007b004b5806a9b4b0d31cf9"
+CONVERTED_METADATA = {"format": "pt"}
+# mmengine's `load_checkpoint` default: strip a DataParallel `module.` prefix (mmengine 0.10.7
+# runner/checkpoint.py, `_load_checkpoint_to_model(revise_keys=[(r'^module\.', '')])`).
+CHECKPOINT_REVISE_KEYS = ((r"^module\.", ""),)
 MAX_PIXELS = 64_000_000  # validate_image ceiling
 
 
@@ -247,6 +258,131 @@ def acquire_verified_checkpoint(cache_dir: str | os.PathLike = ".dimer-models") 
         if temporary.exists():
             temporary.unlink()
     return target
+
+
+def ade20k_dataset_meta() -> dict:
+    """``dataset_meta`` as ``init_model`` sets it from this checkpoint's ``meta`` (``CLASSES``, ``PALETTE``).
+
+    Taken from the pinned MMSegmentation 1.2.2 ``ADE20KDataset.METAINFO``; `convert_checkpoint` refuses a
+    checkpoint whose class names or palette differ from it, so the served model's metadata equals what loading
+    the checkpoint would have produced.
+    """
+    from mmseg.datasets import ADE20KDataset
+
+    info = ADE20KDataset.METAINFO
+    return {"classes": tuple(info["classes"]), "palette": [list(colour) for colour in info["palette"]]}
+
+
+def build_unloaded_model(config: str | os.PathLike, device: str = "cpu"):
+    """Build the segmentor from the pinned config with no checkpoint: ``init_model(config, None)``.
+
+    MMSegmentation's own initialiser builds the model and clears the backbone's pretrained ``init_cfg`` (nothing
+    is downloaded) without reading any weights file. It sets no ``dataset_meta`` when no checkpoint is given, so
+    the checkpoint's class names and palette are set from `ade20k_dataset_meta`.
+    """
+    from mmseg.apis import init_model
+
+    model = init_model(str(config), None, device=device)
+    model.dataset_meta = ade20k_dataset_meta()
+    return model
+
+
+def checkpoint_state_dict(checkpoint: Mapping) -> dict:
+    """The model weights of an MMEngine checkpoint, keyed as mmengine's loader keys them.
+
+    Mirrors ``mmengine.runner.checkpoint._load_checkpoint_to_model`` (0.10.7): take ``checkpoint['state_dict']``
+    when present (else the mapping itself), then apply ``revise_keys`` (strip a leading ``module.``). The
+    ``meta`` entry (training config, class names, palette, versions) is not weights and is not carried.
+    """
+    import torch
+
+    if not isinstance(checkpoint, Mapping):
+        raise ValueError("checkpoint did not unpickle to a mapping")
+    state = checkpoint.get("state_dict", checkpoint)
+    revised: dict = {}
+    for key, value in state.items():
+        for pattern, replacement in CHECKPOINT_REVISE_KEYS:
+            key = re.sub(pattern, replacement, key)
+        if not isinstance(value, torch.Tensor):
+            raise ValueError(f"checkpoint entry {key!r} is not a tensor")
+        revised[key] = value
+    return revised
+
+
+def _write_converted(state: Mapping, target: Path) -> None:
+    """Write a state dict as safetensors, byte-reproducibly: every tensor is cloned into its own contiguous
+    CPU storage (safetensors refuses shared storage) and the one-key metadata header has a fixed order."""
+    from safetensors.torch import save_file
+
+    tensors = {name: value.detach().to("cpu").contiguous().clone() for name, value in state.items()}
+    save_file(tensors, str(target), metadata=dict(CONVERTED_METADATA))
+
+
+def verify_converted(path: str | os.PathLike) -> Path:
+    """Check a converted serving file against its pinned SHA-256; raise on a missing or altered file."""
+    file_path = Path(path)
+    if file_path.name != CONVERTED_WEIGHTS_FILE:
+        raise ValueError(
+            f"{file_path.name}: the segmenter serves only {CONVERTED_WEIGHTS_FILE}; convert the pickled "
+            f"{WEIGHTS_FILE} once with convert_checkpoint()"
+        )
+    if not file_path.is_file():
+        raise FileNotFoundError(f"converted weights missing: {file_path}")
+    digest = _sha256(file_path)
+    if digest != CONVERTED_SHA256:
+        raise ValueError(f"{CONVERTED_WEIGHTS_FILE}: sha256 {digest} != pinned {CONVERTED_SHA256}")
+    return file_path
+
+
+def convert_checkpoint(source: str | os.PathLike, target_dir: str | os.PathLike | None = None) -> Path:
+    """Convert the verified pickled checkpoint into the pinned safetensors file, once.
+
+    The source must match the size and SHA-256 pinned in ``MODEL_SPEC``. It is read with
+    ``torch.load(..., weights_only=True)`` (which refuses arbitrary pickled objects), reduced to its state dict
+    the way mmengine's loader reduces it, checked to carry the class names and palette of
+    `ade20k_dataset_meta`, and loaded into the model built from the pinned config with ``strict=True``. The
+    written file must hash to `CONVERTED_SHA256`, or it is deleted and the conversion refused. Returns the
+    converted file's path.
+    """
+    source_path = Path(source)
+    if not source_path.is_file():
+        raise FileNotFoundError(f"conversion source missing: {source_path}")
+    size = source_path.stat().st_size
+    if size != MODEL_SPEC["checkpoint_size_bytes"] or _sha256(source_path) != MODEL_SPEC["checkpoint_sha256"]:
+        raise ValueError(f"{source_path.name} does not match the checkpoint size and SHA-256 pinned in MODEL_SPEC")
+    import torch
+
+    checkpoint = torch.load(source_path, map_location="cpu", weights_only=True)
+    state = checkpoint_state_dict(checkpoint)
+    meta = checkpoint.get("meta", {}) if "state_dict" in checkpoint else {}
+    model = build_unloaded_model(resolve_packaged_config(), device="cpu")
+    carried = {
+        "classes": tuple(meta.get("CLASSES", ())),
+        "palette": [list(colour) for colour in meta.get("PALETTE", ())],
+    }
+    if carried != model.dataset_meta:
+        raise ValueError(f"{source_path.name}: its class names or palette differ from the pinned ADE20K metadata")
+    model.load_state_dict(state, strict=True)
+    target = Path(target_dir if target_dir is not None else source_path.parent) / CONVERTED_WEIGHTS_FILE
+    partial = target.with_name(target.name + ".partial")
+    try:
+        _write_converted(state, partial)
+        digest = _sha256(partial)
+        if digest != CONVERTED_SHA256:
+            raise ValueError(f"conversion of {source_path.name} hashed to {digest}, not the pinned {CONVERTED_SHA256}")
+        partial.replace(target)
+    finally:
+        if partial.exists():
+            partial.unlink()
+    return verify_converted(target)
+
+
+def acquire_converted_weights(cache_dir: str | os.PathLike = ".dimer-models") -> Path:
+    """Cache path: serve the converted file from ``cache_dir``; fetch and convert the source only if it is absent."""
+    target = Path(cache_dir).expanduser().resolve() / CONVERTED_WEIGHTS_FILE
+    if target.is_file():
+        return verify_converted(target)
+    return convert_checkpoint(acquire_verified_checkpoint(cache_dir))
 
 
 def validate_image(path: str | os.PathLike, *, max_pixels: int = 64_000_000) -> dict:
@@ -431,7 +567,14 @@ def freeze_backbone(model: Any) -> int:
 
 
 class DimerSwinSegmenter:
-    """Public semantic-segmentation task-inference and E2E adaptation API for Swin-T UPerNet."""
+    """Public semantic-segmentation task-inference and E2E adaptation API for Swin-T UPerNet.
+
+    The upstream `.pth` checkpoint is a pickled PyTorch serialization. The runtime verifies its size and
+    SHA-256, reads it once with ``torch.load(..., weights_only=True)`` and converts it into a safetensors file
+    whose SHA-256 is pinned (`convert_checkpoint`). The segmentor is built from the pinned config with no
+    checkpoint and served only from that converted file, with ``load_state_dict(strict=True)``; MMSegmentation's
+    own pickle loader is never called. Digest verification establishes byte identity, not author authenticity.
+    """
 
     def __init__(
         self,
@@ -445,11 +588,12 @@ class DimerSwinSegmenter:
         seed: int = DEFAULT_ADAPT_SEED,
     ):
         versions = verify_runtime_versions()
-        checkpoint = Path(checkpoint) if checkpoint is not None else acquire_verified_checkpoint(cache_dir)
+        checkpoint = verify_converted(checkpoint) if checkpoint is not None else acquire_converted_weights(cache_dir)
         config = resolve_packaged_config()
-        from mmseg.apis import init_model
+        from safetensors.torch import load_file
 
-        self.model = init_model(str(config), str(checkpoint), device=device)
+        self.model = build_unloaded_model(config, device=device)
+        self.model.load_state_dict(load_file(str(checkpoint)), strict=True)
         self.device = device
         self.checkpoint = checkpoint
         self.config = config
@@ -482,17 +626,26 @@ class DimerSwinSegmenter:
         freeze_backbone: bool = False,
         seed: int = DEFAULT_ADAPT_SEED,
     ) -> DimerSwinSegmenter:
-        """Load from the fleet snapshot directory, verify digest, and optionally re-head for custom classes."""
+        """Load from the fleet snapshot directory and optionally re-head for custom classes.
+
+        When the converted safetensors file is absent: stage absent manifest entries (only with
+        ``allow_download=True``), re-hash every entry against the manifest and MODEL_SPEC, and convert the
+        ``.pth`` once (`convert_checkpoint`). Then verify the converted file against its pinned SHA-256 and serve
+        the model from it; the pickled source is not read when the conversion already exists.
+        """
         root = Path(weights_dir or DEFAULT_WEIGHTS_DIR)
-        if not (root / MANIFEST_NAME).is_file():
-            raise FileNotFoundError(
-                f"no snapshot manifest at {root}; use DimerSwinSegmenter(cache_dir=...) for the cache path"
-            )
-        stage_missing_files(root, allow_download=allow_download)
-        verify_snapshot(root)
+        converted = root / CONVERTED_WEIGHTS_FILE
+        if not converted.is_file():
+            if not (root / MANIFEST_NAME).is_file():
+                raise FileNotFoundError(
+                    f"no snapshot manifest at {root}; use DimerSwinSegmenter(cache_dir=...) for the cache path"
+                )
+            stage_missing_files(root, allow_download=allow_download)
+            verify_snapshot(root)
+            convert_checkpoint(root / WEIGHTS_FILE, root)
         return cls(
             device=device,
-            checkpoint=root / WEIGHTS_FILE,
+            checkpoint=converted,
             source="local-snapshot",
             class_names=class_names,
             freeze_backbone_weights=freeze_backbone,
@@ -747,6 +900,8 @@ class DimerSwinSegmenter:
                 "num_classes": len(self.classes),
                 "checkpoint_path": str(self.checkpoint),
                 "checkpoint_sha256": _sha256(self.checkpoint),
+                "checkpoint_format": "safetensors (converted once from the pinned .pth with weights_only=True)",
+                "source_checkpoint_sha256": MODEL_SPEC["checkpoint_sha256"],
             },
             "output_semantics": "Per-pixel class index in [0, num_classes - 1]. No calibrated per-pixel uncertainty is exported.",
         }
