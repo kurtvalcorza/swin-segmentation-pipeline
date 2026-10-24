@@ -1,6 +1,8 @@
 from .metrics import ade20k_raw_to_indices, majority_class_baseline, semantic_iou
 from .runtime import (
+    ARTIFACT_FILENAME,
     ARTIFACT_FORMAT,
+    ARTIFACT_METADATA_KEY,
     DEFAULT_ADAPT_BATCH_SIZE,
     DEFAULT_ADAPT_EPOCHS,
     DEFAULT_ADAPT_LEARNING_RATE,
@@ -40,7 +42,9 @@ __all__ = [
     "ADAPT_CLASSES",
     "ADAPT_SCENE_SIZE",
     "ADE20K_SCENE_SIZE",
+    "ARTIFACT_FILENAME",
     "ARTIFACT_FORMAT",
+    "ARTIFACT_METADATA_KEY",
     "DEFAULT_ADAPT_BATCH_SIZE",
     "DEFAULT_ADAPT_EPOCHS",
     "DEFAULT_ADAPT_LEARNING_RATE",

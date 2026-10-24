@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import types
 from pathlib import Path
 
@@ -10,12 +11,17 @@ import pytest
 import torch
 import torch.nn as nn
 from PIL import Image
+from safetensors.torch import save as safetensors_save
 
 from dimer_swin_segmentation import (
     ADAPT_CLASSES,
+    ARTIFACT_FILENAME,
     ARTIFACT_FORMAT,
+    ARTIFACT_METADATA_KEY,
     MODEL_ID,
+    MODEL_KEY,
     MODEL_REVISION,
+    MODEL_SPEC,
     DimerSwinSegmenter,
     freeze_backbone,
     rehead_model,
@@ -128,70 +134,181 @@ def test_validate_dataset_contract() -> None:
         validate_dataset([{"image": records[0]["image"], "mask": bad_class_mask}], ADAPT_CLASSES)
 
 
-def test_artifact_save_and_load_roundtrip(tmp_path: Path, monkeypatch) -> None:
-    # Build a stub segmenter
+def _stub_pipe(tmp_path: Path, model: nn.Module) -> types.SimpleNamespace:
     pipe = types.SimpleNamespace()
-    pipe.model = DummySegmentor(3)
+    pipe.model = model
     pipe.classes = ("bg", "road", "structure")
     pipe.adapted = True
     pipe.base_state_digest = "e380ad3e" * 8
     pipe.checkpoint = tmp_path / "dummy.pth"
     pipe.checkpoint.write_bytes(b"\x00" * 32)
     pipe.device = "cpu"
+    return pipe
 
-    # Bind save_artifact
-    save_func = DimerSwinSegmenter.save_artifact.__get__(pipe, DimerSwinSegmenter)
-    artifact_path = tmp_path / "swin-segmentation-adapter-v1.pt"
-    desc = save_func(artifact_path, notes="unit test adapter")
 
+def _save(pipe: types.SimpleNamespace, path: Path, notes: str = "unit test adapter") -> dict:
+    return DimerSwinSegmenter.save_artifact.__get__(pipe, DimerSwinSegmenter)(path, notes=notes)
+
+
+def _write_safetensors(path: Path, metadata: dict | None) -> Path:
+    header = None if metadata is None else {ARTIFACT_METADATA_KEY: json.dumps(metadata, sort_keys=True)}
+    path.write_bytes(safetensors_save({"w": torch.zeros(2)}, metadata=header))
+    return path
+
+
+def test_artifact_save_and_load_roundtrip(tmp_path: Path, monkeypatch) -> None:
+    torch.manual_seed(0)
+    source = DummySegmentor(3)
+    pipe = _stub_pipe(tmp_path, source)
+    artifact_path = tmp_path / ARTIFACT_FILENAME
+    desc = _save(pipe, artifact_path)
+
+    assert ARTIFACT_FILENAME == "swin-segmentation-adapter-v2.safetensors"
     assert Path(desc["path"]).is_file()
-    assert desc["format"] == ARTIFACT_FORMAT
+    assert desc["format"] == ARTIFACT_FORMAT == "dimer_swin_segmentation_adapter_v2"
+    assert desc["serialization"] == "safetensors"
     assert desc["class_names"] == ["bg", "road", "structure"]
-    assert desc["tensors"] > 0
+    assert desc["tensors"] == len(source.state_dict()) > 0
     assert desc["model_id"] == MODEL_ID
     assert desc["model_revision"] == MODEL_REVISION
 
-    # Test load_artifact with stubbed from_pretrained
-    dummy_reloaded = DummySegmentor(3)
-    stub_pipe = types.SimpleNamespace(
-        model=dummy_reloaded,
-        classes=("bg", "road", "structure"),
-        adapted=False,
-        source="local",
-    )
-    monkeypatch.setattr(DimerSwinSegmenter, "from_pretrained", classmethod(lambda cls, **kw: stub_pipe))
+    # Every non-tensor field is plain data in the header metadata (SER11).
+    metadata, _ = DimerSwinSegmenter.read_artifact(artifact_path)
+    assert metadata == {
+        "format": ARTIFACT_FORMAT,
+        "model_id": MODEL_ID,
+        "model_revision": MODEL_REVISION,
+        "model_key": MODEL_KEY,
+        "checkpoint_sha256": MODEL_SPEC["checkpoint_sha256"],
+        "class_names": ["bg", "road", "structure"],
+        "adapted": True,
+        "base_state_digest": "e380ad3e" * 8,
+        "notes": "unit test adapter",
+    }
 
+    # Reload into a fresh, differently initialised model: tensors and outputs must match exactly.
+    torch.manual_seed(1)
+    fresh = DummySegmentor(3)
+    assert not torch.equal(fresh.backbone[0].weight, source.backbone[0].weight)
+    stub_pipe = types.SimpleNamespace(
+        model=fresh, classes=("bg", "road", "structure"), adapted=False, source="local"
+    )
+    seen: dict = {}
+
+    def fake_from_pretrained(cls, **kw):
+        seen.update(kw)
+        return stub_pipe
+
+    monkeypatch.setattr(DimerSwinSegmenter, "from_pretrained", classmethod(fake_from_pretrained))
     loaded = DimerSwinSegmenter.load_artifact(artifact_path)
     assert loaded.adapted is True
     assert loaded.source == f"artifact:{artifact_path.name}"
+    assert seen["class_names"] == ("bg", "road", "structure")
+    original, reloaded = source.state_dict(), loaded.model.state_dict()
+    assert original.keys() == reloaded.keys()
+    for key in original:
+        assert original[key].dtype == reloaded[key].dtype, key
+        assert torch.equal(original[key], reloaded[key]), key
+    x = torch.rand(1, 3, 8, 8, generator=torch.Generator().manual_seed(7))
+    feats = torch.ones(1, 512, 2, 2)
+    with torch.no_grad():
+        assert torch.equal(source.backbone(x), loaded.model.backbone(x))
+        assert torch.equal(source.decode_head.conv_seg(feats), loaded.model.decode_head.conv_seg(feats))
+
+
+def test_artifact_bytes_are_deterministic_and_pickle_free(tmp_path: Path) -> None:
+    torch.manual_seed(0)
+    pipe = _stub_pipe(tmp_path, DummySegmentor(3))
+    first, second = tmp_path / "a.safetensors", tmp_path / "b.safetensors"
+    d1, d2 = _save(pipe, first), _save(pipe, second)
+    raw = first.read_bytes()
+    assert raw == second.read_bytes()
+    assert d1["sha256"] == d2["sha256"]
+
+    # A safetensors file: little-endian u64 header length, a JSON header, then raw tensor bytes.
+    header_len = int.from_bytes(raw[:8], "little")
+    header_bytes = raw[8 : 8 + header_len]
+    header = json.loads(header_bytes)
+    assert list(header["__metadata__"]) == [ARTIFACT_METADATA_KEY]
+    encoded = header["__metadata__"][ARTIFACT_METADATA_KEY]
+    assert encoded == json.dumps(json.loads(encoded), sort_keys=True, separators=(",", ":"))
+    assert sum(1 for k in header if k != "__metadata__") == d1["tensors"]
+
+    # No pickle stream and no torch.save zip container: the header is JSON and the rest is raw tensor data,
+    # whose length the header's offsets account for exactly.
+    assert not raw.startswith(b"PK\x03\x04") and b"data.pkl" not in raw
+    assert header_bytes.lstrip().startswith(b"{") and b"\x80" not in header_bytes
+    data_end = max(info["data_offsets"][1] for k, info in header.items() if k != "__metadata__")
+    assert len(raw) == 8 + header_len + data_end
 
 
 def test_artifact_load_rejects_corrupt_or_mismatched(tmp_path: Path) -> None:
-    bad_format = tmp_path / "bad_format.pt"
-    torch.save({"format": "other_format"}, bad_format)
+    # A legacy torch.save pickle (artifact v1) is refused without being unpickled.
+    legacy = tmp_path / "swin-segmentation-adapter-v1.pt"
+    torch.save({"format": "dimer_swin_segmentation_adapter_v1", "state_dict": {}}, legacy)
+    with pytest.raises(ValueError, match="not a readable safetensors file"):
+        DimerSwinSegmenter.load_artifact(legacy)
+
+    # A tampered (truncated) artifact is refused.
+    torch.manual_seed(0)
+    good = tmp_path / "good.safetensors"
+    _save(_stub_pipe(tmp_path, DummySegmentor(3)), good)
+    raw = good.read_bytes()
+    truncated = tmp_path / "truncated.safetensors"
+    truncated.write_bytes(raw[:-16])
+    with pytest.raises(ValueError, match="not a readable safetensors file"):
+        DimerSwinSegmenter.load_artifact(truncated)
+
+    # A tampered header length is refused.
+    bad_header = tmp_path / "bad_header.safetensors"
+    bad_header.write_bytes((int.from_bytes(raw[:8], "little") + 9).to_bytes(8, "little") + raw[8:])
+    with pytest.raises(ValueError, match="not a readable safetensors file"):
+        DimerSwinSegmenter.load_artifact(bad_header)
+
+    # A safetensors file without DIMER metadata is refused.
+    with pytest.raises(ValueError, match="artifact format None"):
+        DimerSwinSegmenter.load_artifact(_write_safetensors(tmp_path / "no_meta.safetensors", None))
+
     with pytest.raises(ValueError, match="artifact format"):
-        DimerSwinSegmenter.load_artifact(bad_format)
+        DimerSwinSegmenter.load_artifact(
+            _write_safetensors(tmp_path / "bad_format.safetensors", {"format": "other_format"})
+        )
 
-    bad_model = tmp_path / "bad_model.pt"
-    torch.save(
-        {"format": ARTIFACT_FORMAT, "model_id": "wrong_model", "model_revision": MODEL_REVISION},
-        bad_model,
-    )
     with pytest.raises(ValueError, match="artifact built on"):
-        DimerSwinSegmenter.load_artifact(bad_model)
+        DimerSwinSegmenter.load_artifact(
+            _write_safetensors(
+                tmp_path / "bad_model.safetensors",
+                {"format": ARTIFACT_FORMAT, "model_id": "wrong_model", "model_revision": MODEL_REVISION},
+            )
+        )
 
-    bad_key = tmp_path / "bad_key.pt"
-    torch.save(
-        {
-            "format": ARTIFACT_FORMAT,
-            "model_id": MODEL_ID,
-            "model_revision": MODEL_REVISION,
-            "model_key": "wrong_key",
-        },
-        bad_key,
-    )
+    identity = {"format": ARTIFACT_FORMAT, "model_id": MODEL_ID, "model_revision": MODEL_REVISION}
     with pytest.raises(ValueError, match="artifact model_key"):
-        DimerSwinSegmenter.load_artifact(bad_key)
+        DimerSwinSegmenter.load_artifact(
+            _write_safetensors(
+                tmp_path / "bad_key.safetensors",
+                {**identity, "model_key": "wrong_key"},
+            )
+        )
+
+    with pytest.raises(ValueError, match="artifact checkpoint_sha256"):
+        DimerSwinSegmenter.load_artifact(
+            _write_safetensors(
+                tmp_path / "bad_checkpoint.safetensors",
+                {**identity, "model_key": MODEL_KEY, "checkpoint_sha256": "0" * 64},
+            )
+        )
+
+    with pytest.raises(ValueError, match="class_names"):
+        DimerSwinSegmenter.load_artifact(
+            _write_safetensors(
+                tmp_path / "bad_classes.safetensors",
+                {**identity, "model_key": MODEL_KEY, "checkpoint_sha256": MODEL_SPEC["checkpoint_sha256"]},
+            )
+        )
+
+    with pytest.raises(FileNotFoundError):
+        DimerSwinSegmenter.load_artifact(tmp_path / "missing.safetensors")
 
 
 def test_finetune_loop_mock(tmp_path: Path, monkeypatch) -> None:
