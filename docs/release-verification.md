@@ -3,7 +3,7 @@
 `tutorials/swin_segmentation_task_inference.ipynb` (`TASK-INFERENCE`, standalone) is a **release candidate** until
 the exact notebook revision has executed top-to-bottom in a clean supported runtime. Unit tests, JSON validation,
 code-cell compilation, and `tools/validate_release_assets.py` are necessary checks but are **not** runtime evidence
-under DIMER Notebook Specification 2.2. This file is the durable release-gate record for the notebook.
+under DIMER Notebook Specification 2.5. This file is the durable release-gate record for the notebook.
 
 ## Automatic coverage (static, every pull request)
 

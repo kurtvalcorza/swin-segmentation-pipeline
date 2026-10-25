@@ -79,7 +79,7 @@ TEMPLATE = {
         "**The default path really adapts the model:** it generates a 24-scene deterministic segmentation dataset over a 3-class "
         "custom vocabulary (`background`, `road`, `structure`), validates the dataset contract (`core.dataset.vision.raster-mask`), "
         "partitions into train and validation splits, re-heads the decode and auxiliary heads of a fresh copy of the pretrained model "
-        "(the pretrained 150-class model stays available), freezes the 28.3M Swin-T backbone, runs a bounded AdamW fine-tune loop, "
+        "(the pretrained 150-class model stays available), freezes the 27.5M Swin-T backbone, runs a bounded AdamW fine-tune loop, "
         "evaluates post-adaptation mIoU and pixel accuracy against a majority baseline and a non-learned colour baseline, runs "
         "inference on an unseen test scene, exports `swin-segmentation-adapter-v2.safetensors`, "
         "and reloads the artifact from disk asserting exact numerical mask agreement.\n\n"
@@ -103,7 +103,7 @@ TEMPLATE = {
     "exclusions": (
         "real-world cityscapes deployment claims (the adaptation dataset is drawn in code, so the model learns these synthetic "
         "structures and nothing about street photographs); full network unfreezing without large annotated datasets (the default "
-        "freezes the 28.3M Swin-T backbone); instance or panoptic segmentation; object detection; and depth estimation."
+        "freezes the 27.5M Swin-T backbone); instance or panoptic segmentation; object detection; and depth estimation."
     ),
     "guided_opening": [
         (
@@ -131,8 +131,8 @@ TEMPLATE = {
             "how to read it. **[Engineering]** — reproducibility, provenance and packaging.\n\n"
             "**Predict, then check.** Before each principal result a **Predict before running** prompt asks you to commit to an "
             "expectation; after it, **What to notice** describes normal output and a collapsed **Check your reasoning** block gives a worked "
-            "answer. No metric values of a hosted run are recorded for this notebook, so the answers describe the shape of a normal "
-            "result; the baseline numbers they quote were computed offline from the default data, which needs no model."
+            "answer. Where an answer quotes a number from a run, it names that run: the hosted Colab T4 run of the previous blob (`86ee573f`, 2026-10-25; not re-run here), which printed "
+            "the same metrics as the 2026-10-10 run of blob `3cce5e9c`. The baseline numbers were also computed offline from the default data, which needs no model."
         ),
         (
             "## The task: Input → Model/System → Output\n\n"
@@ -185,6 +185,11 @@ TEMPLATE = {
     "prerequisites": [
         "- **Runtime:** a fresh **Linux x86_64** runtime; the kernel's own Python version does not matter. The qualified OpenMMLab stack — torch 2.1.2 (CPU build), MMCV 2.1.0, MMEngine 0.10.7, MMSegmentation 1.2.2, NumPy 1.26.4 — has prebuilt wheels for Python 3.10 only, so Section 1 has `uv` provision a managed **CPython 3.10.18**, installs the hash-locked pins there and runs every later cell in that interpreter (Section 4 asserts it). The recorded runtime is a Python 3.10 Jupyter kernel on Linux (GitHub Actions); Google Colab (Python 3.12 kernel) is expected to work the same way but **no Colab run has been recorded yet**. CPU is the default and only qualified path; no GPU is required.",
         "- **External package indexes:** the isolated install reads the PyTorch CPU index (`download.pytorch.org`) and the OpenMMLab wheel page (`download.openmmlab.com`) besides PyPI.",
+        "- **Overlap with the training data:** the pinned UPerNet checkpoint was trained on the ADE20K training split after ImageNet-1k "
+        "pretraining of the Swin-T backbone [1], [3] (checkpoint name and config). The default adaptation data is drawn in code, so it cannot "
+        "overlap either; this is verified by construction. The optional ADE20K fixtures are described by their source as validation images, "
+        "which are outside the training split; that is inferred from the fixture's description, not verified. A BYOD folder of "
+        "natural photographs may contain ImageNet-1k or ADE20K images, which would make your held-out numbers optimistic.",
         "- **Knowledge:** basic Python and PIL; dense semantic class masks; intersection-over-union (IoU) and pixel accuracy.",
         "- **Data:** the default path generates everything deterministically in code by `samples.py` (no dataset download): one 512×384 demonstration scene and a 24-image custom segmentation dataset with exact masks. `USE_ADE20K_FIXTURES` (off) fetches two ADE20K validation images with their annotations from a pinned Hugging Face commit, verified by SHA-256, and scores the pretrained model on them. Two BYOD branches are off by default: `USE_BYOD_IMAGE` (one image, by `BYOD_IMAGE_PATH` or the Colab upload) and `USE_BYOD_DATASET` (a folder or `.zip` with `images/`, `masks/` and `classes.txt`; see Section 6). Do not upload confidential or restricted imagery to a hosted runtime unless you are authorised to process it there; uploads stay in this runtime.",
     ],
@@ -195,7 +200,7 @@ TEMPLATE = {
         "train and validation sets, re-heads a fresh copy of the pretrained model, **runs the bounded fine-tune with frozen backbone**, evaluates on "
         "the held-out split beside a majority and a colour baseline, runs inference on an unseen test scene, exports the adapted artifact, reloads it from disk to verify numeric consistency, "
         "and writes machine-readable outputs with provenance. Nothing is skipped behind a default-off flag, and no runtime restart is needed "
-        "(NOTEBOOK_SPEC 2.2 §5, RUN7, FT2). The recorded runs are GitHub Actions runs in a Python 3.10 kernel; no Colab run is recorded yet."
+        "(NOTEBOOK_SPEC 2.5 §5, RUN7, FT2). Hosted runs are recorded per notebook blob in `docs/release-verification.md`; the previous blob `86ee573f` completed one pass on a fresh Colab T4 VM on 2026-10-25 (CPU execution by design)."
     ),
     "byod": (
         "Two optional BYOD branches are included and both are disabled by default (`USE_BYOD_IMAGE = False`, `USE_BYOD_DATASET = False`). "
@@ -322,8 +327,8 @@ TEMPLATE = {
                 "<details><summary>Check your reasoning</summary>The model answers in its 150-class vocabulary whatever it is shown, so "
                 "a gradient with shapes gets labels such as sky, wall or floor — plausible-sounding, unverifiable, because the scene has "
                 "no ground truth. That is why the report says `not-measurable`: a confident label is not evidence. The ADE20K fixtures "
-                "give a measured answer on two real images; the earlier carrier of this notebook recorded mIoU 0.387 on them against a "
-                "majority baseline of 0.054 (see `docs/release-verification.md`).</details>\n\n"
+                "give a measured answer on two real images: turning the flag on prints their mIoU beside the majority baseline. No "
+                "recorded run of this notebook has turned it on, so no number is quoted here.</details>\n\n"
                 "## 6. Generate (or bring) and validate the segmentation dataset · [Evaluation practice]\n\n"
                 "The adaptation dataset follows the `core.dataset.vision.raster-mask` contract. By default it is 24 synthetic scenes "
                 "with exact, pixel-aligned masks over `ADAPT_CLASSES = ('background', 'road', 'structure')`. `validate_dataset` "
@@ -420,7 +425,7 @@ TEMPLATE = {
                 "The adaptation never touches `pipe`. This cell loads a second model, `adapt_pipe`, from the same verified checkpoint, "
                 "then `rehead_model` replaces its `decode_head.conv_seg` (512 → classes) and `auxiliary_head.conv_seg` (256 → classes) "
                 "with new layers initialised from `DEFAULT_ADAPT_SEED`, and `freeze_backbone` sets `requires_grad = False` on the "
-                "28.3M-parameter Swin-T backbone. Re-running this cell always starts again from the pretrained weights and the same head.\n\n"
+                "27.5M-parameter Swin-T backbone (Section 8 prints `frozen_backbone_params`: 27,520,698 in the hosted run of `86ee573f`). Re-running this cell always starts again from the pretrained weights and the same head.\n\n"
                 "The re-headed model is then scored on the validation split. This **random-head reference is not a baseline**: the new "
                 "head has never seen a label, so it predicts noise and any training beats it. The baselines that say something are in "
                 "Section 10."
@@ -473,7 +478,7 @@ TEMPLATE = {
         {
             "md": (
                 "**What to notice (Section 9):** one loss line per epoch and the summary with `epoch_losses` and `final_loss`.\n\n"
-                "<details><summary>Check your reasoning</summary>No hosted loss values are recorded for this notebook, so read your "
+                "<details><summary>Check your reasoning</summary>In the hosted Colab T4 run of the previous blob (`86ee573f`, 2026-10-25; not re-run here) the loss went 7.4856 → 0.9187 → 0.6023; read your "
                 "own. With a random head the first epoch's loss is high; on this easy task it usually falls steeply within three "
                 "epochs, because a few colour-like features from the frozen backbone are enough to separate the classes.</details>\n\n"
                 "## 10. Evaluate the adapted model beside two baselines · [Evaluation practice]\n\n"
@@ -482,8 +487,8 @@ TEMPLATE = {
                 "`colour_centroid_baseline`: one mean colour per class fitted on the training masks, and each validation pixel labelled "
                 "with the nearest mean colour — no learning and no spatial context.\n\n"
                 "**What this comparison can and cannot show.** On the default synthetic data the three classes differ by colour, so the "
-                "colour baseline scores close to the ceiling (computed offline on the default split: mIoU 0.975, pixel accuracy 0.995; "
-                "majority baseline mIoU 0.184, pixel accuracy 0.553). An adapted mIoU near 1.0 here shows that the re-head, training, "
+                "colour baseline scores close to the ceiling (computed offline on the default split, and printed the same in the hosted runs: mIoU 0.975, pixel accuracy 0.995; "
+                "majority baseline mIoU 0.184, pixel accuracy 0.553). An adapted mIoU well above the majority baseline here shows that the re-head, training, "
                 "export and reload work; it **cannot** show what the pretrained Swin features add over a colour rule. On your own "
                 "dataset, where classes are not separable by colour, the same two baselines make the network's gain readable.\n\n"
                 "**Predict before running:** will the adapted model clearly beat the colour baseline on the default data, roughly "
@@ -526,10 +531,11 @@ TEMPLATE = {
             "md": (
                 "**What to notice (Section 10):** the adapted mIoU against both baselines, the per-class IoU lines, the run history "
                 "and, if it applies, the NOTE.\n\n"
-                "<details><summary>Check your reasoning</summary>Roughly match it. The colour rule is already near the ceiling on these "
-                "scenes, so even a perfect network could only tie it within a few hundredths; the small remaining errors of the colour "
-                "rule sit on outlines and roof edges whose colours differ from the class mean. The honest sentence is: \"the pipeline "
-                "adapts and reproduces end to end; this data cannot separate learned features from colour\".</details>\n\n"
+                "<details><summary>Check your reasoning</summary>Fall short. In the hosted Colab T4 run of the previous blob (`86ee573f`, 2026-10-25; not re-run here) the adapted model "
+                "scored mIoU 0.914 and pixel accuracy 0.978 against the colour rule's 0.975 and 0.995, and the cell printed the NOTE that "
+                "the adapted model does not beat the colour baseline; most of the gap is the `structure` class (IoU 0.790). Three epochs "
+                "with a frozen backbone do not reach a no-learning colour rule on this data. The honest sentence is: \"the pipeline "
+                "adapts and reproduces end to end; on this data a colour rule beats the adapted model, so the run says nothing about what learned features add\".</details>\n\n"
                 "## 11. Run inference on an unseen test scene · [Concept]\n\n"
                 "On the default path this cell draws a fresh scene that is in neither split (`generate_scene(99)`), runs the adapted "
                 "model, scores IoU against its known mask and exports `outputs/{stem}_test_scene_adapted_semantic.png`. With your own "
@@ -678,7 +684,7 @@ TEMPLATE = {
         "training the already-adapted heads instead.\n"
         "4. **Observe:** Section 10 prints the run history — one row per evaluation, the default first — side by side.\n"
         "5. **Explain:** why can the loss move while the mIoU barely does on this data?\n\n"
-        "<details><summary>Check your reasoning</summary>The mIoU is close to its ceiling and the colour baseline is already near it, "
+        "<details><summary>Check your reasoning</summary>The colour baseline is near the ceiling and the adapted mIoU is below it (0.914 in the hosted run of `86ee573f`), "
         "so a different learning rate mostly changes how confidently the heads separate the colours (the loss), not which class wins "
         "at each pixel (the mIoU). A large difference in mIoU would point to a learning rate too high for three epochs. Only data "
         "that colour cannot separate — your own dataset — makes this comparison informative.</details>\n\n"
@@ -703,6 +709,7 @@ TEMPLATE = {
         "|---|---|---|\n"
         "| Section 1 stops with `This notebook needs a Linux x86_64 runtime` | a Windows or macOS kernel, or an ARM machine | Use a Linux x86_64 Jupyter kernel or Google Colab. |\n"
         "| Section 1 fails while downloading `uv`, or `The pinned uv wheel failed its size/SHA-256 check` | a network failure, or an altered download | Run the Section 1 install cell again; never edit the digest. |\n"
+        "| You want the isolated environment somewhere other than `dimer_isolated_env/` | Section 1 builds it in the working directory by default | Set the environment variable `DIMER_ISOLATED_ENV` to a path before running Section 1. |\n"
         "| `CalledProcessError` from `uv pip install` in Section 1 | the PyTorch CPU index, the OpenMMLab wheel page or PyPI was unreachable | Run the cell again later; never loosen a pin. |\n"
         "| `holds Python …, not 3.10.18` in Section 1 | an older `dimer_isolated_env/` folder | Delete that folder (or start a fresh runtime) and run the install cell again. |\n"
         "| `Python 3.10 is required …` in Section 4 | Section 1 was skipped, so the cell ran in the kernel | Run Sections 1–3 first, or choose *Run all*. |\n"
@@ -722,13 +729,10 @@ TEMPLATE = {
         "4. The reloaded artifact reproduced the masks exactly: ___ (yes/no).\n"
         "5. Before trusting an adapted model on my own imagery I would need ___.\n\n"
         "## References\n\n"
-        "- Repository README: https://github.com/kurtvalcorza/swin-segmentation-pipeline/blob/main/README.md\n"
-        "- Repository model card: https://github.com/kurtvalcorza/swin-segmentation-pipeline/blob/main/MODEL_CARD.md\n"
-        "- Weight provenance: https://github.com/kurtvalcorza/swin-segmentation-pipeline/blob/main/docs/WEIGHTS.md\n"
-        "- Pinned checkpoint (OpenMMLab host): https://download.openmmlab.com/mmsegmentation/v0.5/swin/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth\n"
-        "- Config source (MMSegmentation v1.2.2, `configs/swin`): https://github.com/open-mmlab/mmsegmentation/tree/v1.2.2/configs/swin\n"
-        "- Upstream project: https://github.com/microsoft/Swin-Transformer\n"
-        "- Swin Transformer: Hierarchical Vision Transformer using Shifted Windows: https://arxiv.org/abs/2103.14030\n"
-        "- Unified Perceptual Parsing for Scene Understanding (UPerNet): https://arxiv.org/abs/1807.10221"
+        "[1] Z. Liu *et al.*, \"Swin Transformer: Hierarchical vision transformer using shifted windows,\" in *Proc. IEEE/CVF Int. Conf. Comput. Vis. (ICCV)*, 2021. [Online]. Available: https://arxiv.org/abs/2103.14030\n\n"
+        "[2] T. Xiao, Y. Liu, B. Zhou, Y. Jiang, and J. Sun, \"Unified perceptual parsing for scene understanding,\" in *Proc. Eur. Conf. Comput. Vis. (ECCV)*, 2018. [Online]. Available: https://arxiv.org/abs/1807.10221\n\n"
+        "[3] OpenMMLab, pinned checkpoint and config (MMSegmentation v1.2.2, `configs/swin`). [Online]. Available: https://github.com/open-mmlab/mmsegmentation/tree/v1.2.2/configs/swin; https://download.openmmlab.com/mmsegmentation/v0.5/swin/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K/upernet_swin_tiny_patch4_window7_512x512_160k_ade20k_pretrain_224x224_1K_20210531_112542-e380ad3e.pth\n\n"
+        "[4] Microsoft, \"Swin-Transformer,\" GitHub repository. [Online]. Available: https://github.com/microsoft/Swin-Transformer\n\n"
+        "[5] K. Valcorza, \"swin-segmentation-pipeline,\" README and weight provenance. [Online]. Available: https://github.com/kurtvalcorza/swin-segmentation-pipeline/blob/main/README.md, https://github.com/kurtvalcorza/swin-segmentation-pipeline/blob/main/docs/WEIGHTS.md; model card: https://github.com/kurtvalcorza/swin-segmentation-pipeline/blob/main/MODEL_CARD.md"
     ),
 }
