@@ -132,6 +132,8 @@ evidence for that carrier and for the OpenMMLab inference path, not for the stan
 
 ## Current status
 
+**Pending (tier C review fixes, 2026-10-25):** `tutorials/swin_segmentation_colab.ipynb` blob `b7bfe1f0f2510d010ad577ccf880c68f8f4883c6`, generated at `5d7f3f4` (T87-1..T87-5). It changes markdown, the use notice, `metadata.dimer` and the `NOTEBOOK_SOURCE` record only. Status **Candidate**; its hosted Colab T4 run is pending, and the runs below describe earlier blobs (REL14).
+
 The current blob is `86ee573f27e171db6674e3ab6c5e264cf2508448` (main `f5422aa`, safetensors adapter). It completed one pass with no restart and 0 errors on a fresh Colab Tesla T4 VM on 2026-10-25 (Colab CLI sequential execution, 18/18 code cells, 1008.2 s, CPU execution by design; adapted mIoU 0.914 beside majority 0.184 and colour 0.975, scene 99 mIoU 0.966; `swin-segmentation-adapter-v2.safetensors` reloaded with an exact mask match), covering the default path. Remaining gates: REL12 (a hosted BYOD run with one accepted and one refused input) and REL2 (a browser run of the interactive journeys). Earlier blobs' runs, including the 2026-10-10 run of `3cce5e9c2ecf`, the 2026-09-24 GitHub Actions run and the PR #17 run of `25c5ed83`, are history (REL14). Static validation
 Static validation
 (`tools/validate_release_assets.py`), nbformat validation, a `compile()` sweep over every code cell, and the offline
