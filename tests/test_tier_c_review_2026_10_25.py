@@ -49,3 +49,4 @@ def test_t87_5_spec_items():
     assert "Notice.** For research, training and evaluation only." in head
     md = _markdown()
     assert "[1] Z. Liu" in md and "`DIMER_ISOLATED_ENV`" in md
+    assert "scores close to the ceiling too" not in md

@@ -692,7 +692,7 @@ TEMPLATE = {
         "Each pixel receives one class index from the target vocabulary (`background`, `road`, `structure` on the default path) by "
         "per-pixel argmax; the API exposes **no per-pixel confidence** and the package ships no threshold. The synthetic dataset "
         "demonstrates that the architecture can be re-headed and adapted to custom segmentation classes in-process with a frozen "
-        "backbone. Because its classes are separable by colour, a non-learned colour rule scores close to the ceiling too, so the default "
+        "backbone. Because its classes are separable by colour, a non-learned colour rule scores close to the ceiling and above the adapted model in the recorded hosted runs (mIoU 0.975 against 0.914), so the default "
         "adaptation numbers do not show what the pretrained features contribute, and they do not represent real-world photographic "
         "scene segmentation. The pretrained 150-class model is measured only when `USE_ADE20K_FIXTURES` is on, on two images.\n\n"
         "Successful execution proves that the recorded repository revision's package, carried in this notebook, can acquire and "
