@@ -144,3 +144,5 @@ hash lock `tutorials/requirements-colab.lock.txt` (`--require-hashes --only-bina
 cp310 manylinux wheel from the OpenMMLab page, torch the `+cpu` wheel from the PyTorch CPU index), re-heads a fresh
 model copy, adds a BYOD dataset branch and a colour baseline, and corrects the synthetic masks; all of that ran in the 2026-10-10 Colab T4 row above. A hosted run must record `restarted: false`, the library versions, the adaptation metrics beside both baselines, and a
 Colab run before any entry point calls Colab supported.
+
+The current blob `77e566e4` (code commit `87e3669`) shows a refused BYOD input as one `Refused: <file>: <reason>` line with no traceback, removes the earlier run's results and `outputs/` files and stops Run all at that cell, while genuine failures keep their traceback (NOTEBOOK_SPEC DAT19/DAT20); its hosted Colab T4 runs (the default path and a scripted refusal, `USE_BYOD_DATASET=True;BYOD_DATASET_PATH='/etc'`) are pending, and the hosted runs of earlier blobs, including `e4b54e748338`, are history for it (REL14).
