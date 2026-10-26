@@ -1,0 +1,2 @@
+[console_scripts]
+dimer-swin-segment = dimer_swin_segmentation.cli:main
