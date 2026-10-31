@@ -102,12 +102,19 @@ def _dataset_cell(notebook: dict) -> str:
     return next(s for s in _code(notebook) if "USE_BYOD_DATASET = False" in s)
 
 
+def _dat20_helpers(notebook: dict) -> str:
+    """The DAT20 refusal helpers that the image cell defines and the dataset cell uses."""
+    image_cell = next(s for s in _code(notebook) if "USE_ADE20K_FIXTURES = False" in s)
+    return image_cell[image_cell.index("class BYODRefusal(ValueError):") : image_cell.index("# What an earlier run of this section left")]
+
+
 def _run_dataset_cell(notebook: dict, tmp_path: Path, monkeypatch, *, path: str = "", previous=None) -> dict:
     monkeypatch.chdir(tmp_path)
     monkeypatch.setitem(sys.modules, "google.colab", None)
     (tmp_path / "outputs").mkdir(exist_ok=True)
     namespace = {name: getattr(pkg, name) for name in pkg.__all__}
-    namespace.update({"Path": Path, "json": json, "numpy": np, "sample_dir": tmp_path / "sample", "dataset_records": previous})
+    namespace.update({"Path": Path, "json": json, "numpy": np, "zipfile": zipfile, "sample_dir": tmp_path / "sample", "dataset_records": previous})
+    exec(_dat20_helpers(notebook), namespace)  # noqa: S102 - BYODRefusal and refuse_byod, defined in the image cell (DAT20)
     (tmp_path / "sample").mkdir(exist_ok=True)
     source = _dataset_cell(notebook).replace("USE_BYOD_DATASET = False", "USE_BYOD_DATASET = True").replace("BYOD_DATASET_PATH = ''", f"BYOD_DATASET_PATH = {path!r}")
     exec(source, namespace)  # noqa: S102 - the notebook's own cell
@@ -125,7 +132,7 @@ def test_sws_M2_byod_zip_is_read_validated_and_used(notebook: dict, tmp_path: Pa
 
 def test_sws_M2_flag_on_with_nothing_supplied_stops_and_never_reuses_old_records(notebook: dict, tmp_path: Path, monkeypatch) -> None:
     stale = synthetic_segmentation_dataset(2, width=32, height=32)
-    with pytest.raises(RuntimeError, match="USE_BYOD_DATASET is on but BYOD_DATASET_PATH is empty"):
+    with pytest.raises(ValueError, match="USE_BYOD_DATASET is on but BYOD_DATASET_PATH is empty"):  # a BYODRefusal since DAT20
         _run_dataset_cell(notebook, tmp_path, monkeypatch, previous=stale)
 
 
