@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.11"
       - name: Install pinned CPU runtime
         run: |
           python -m pip install --upgrade pip
@@ -27,6 +27,9 @@ jobs:
           # Torch 2.1 / OpenMMLab CPU wheels were built against NumPy 1.x.
           # OpenCV 5 pulls NumPy 2 on current PyPI, so pin both sides of the ABI boundary.
           python -m pip install --force-reinstall "numpy==1.26.4" "opencv-python==4.10.0.84"
+          # On CPython 3.11 openmim's unpinned pandas resolves to 3.x, which requires NumPy 2: move pandas alone to the
+          # 2.2 line (no --force-reinstall, so its dependencies, e.g. openxlab's pytz~=2023.3, stay where mim put them).
+          python -m pip install "pandas==2.2.3"
           python -m pip check
       - name: Probe official Swin UPerNet task inference
         run: python scripts/probe_task_inference_runtime.py

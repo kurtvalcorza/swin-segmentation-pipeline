@@ -29,7 +29,7 @@ task_inference_surface: spec/task-inference-surface.json
 [![Checkpoint](https://img.shields.io/badge/Checkpoint-upernet__swin__tiny__patch4__window7__512x512-ffcc4d?style=flat)](spec/task-inference-surface.json)
 [![Model released](https://img.shields.io/badge/Model%20released-2021--04--12-6f42c1?style=flat)](https://github.com/SwinTransformer/storage/releases/tag/v1.0.1)
 [![Sample eval](https://img.shields.io/badge/Sample%20eval-mIoU%200.387%20%7C%20pixel%20acc%200.707-2ea44f?style=flat)](tutorials/README.md)
-[![Python 3.10 required](https://img.shields.io/badge/Python-3.10%20required-3776ab?style=flat&logo=python&logoColor=white)](README.md)
+[![Python 3.11 required](https://img.shields.io/badge/Python-3.11%20required-3776ab?style=flat&logo=python&logoColor=white)](README.md)
 
 > [!WARNING]
 > ⚠️ **Provided for research, training, and evaluation purposes only.** Model weights are redistributed unmodified under their upstream license, which controls your use, including any commercial use or redistribution; the accompanying code and notebooks are released under this repository's license. All of it is supplied **"as is"**, without warranty of any kind, and has not been validated for production, clinical, or safety-critical use. Running the notebooks downloads third-party weights and datasets governed by their own licenses and consumes compute on your own Colab/Kaggle account. To the maximum extent permitted by law, the maintainers of this repository and the DIMER platform accept no liability for any damages arising from their use. Hosting implies no affiliation with or endorsement by the original authors.
@@ -45,7 +45,7 @@ This pipeline provides a ready-to-run interactive Google Colab notebook demonstr
   *Pretrained ADE20K semantic segmentation, dataset validation (`core.dataset.vision.raster-mask`), dynamic re-heading to custom classes (`background`, `road`, `structure`), bounded fine-tuning with frozen backbone, held-out mIoU and pixel accuracy evaluation against majority baseline, and portable adapter artifact export and reload.*
 
 > [!NOTE]
-> Runs on the default CPU runtime; the shipped OpenMMLab runtime is CPU-only and requires Python 3.10.
+> Runs on the default CPU runtime; the shipped OpenMMLab runtime is CPU-only and requires Python 3.11.
 
 ---
 
@@ -55,7 +55,7 @@ This repository has **two separate capability surfaces**. It now ships an implem
 
 #### Intended Use and Limitations
 
-The supported capability today is pretrained semantic-segmentation inference in the frozen ADE20K 150-class label space. Users can run the repository-owned API/CLI in the qualified Python 3.10/OpenMMLab environment or follow the release-grade notebook to generate class-index masks and reproduce a small labelled tutorial evaluation. The runtime does not train on user data, produce an adapted artifact or provide a production serving composition. The upstream `.pth` checkpoint is code-capable PyTorch serialization; the runtime verifies the pinned bytes before MMSegmentation loads it, but digest identity is not publisher authentication. Output masks do not include calibrated uncertainty. The two-image tutorial mIoU is execution/evaluation sanity evidence only, not a full ADE20K benchmark reproduction or production validation. The separate adaptation-lineage checkpoint is MIT-licensed under the `SwinTransformer/storage` repository and cleared for hosting; the adaptation capability itself remains scaffolded because it is not implemented in this release.
+The supported capability today is pretrained semantic-segmentation inference in the frozen ADE20K 150-class label space. Users can run the repository-owned API/CLI in the qualified Python 3.11/OpenMMLab environment or follow the release-grade notebook to generate class-index masks and reproduce a small labelled tutorial evaluation. The runtime does not train on user data, produce an adapted artifact or provide a production serving composition. The upstream `.pth` checkpoint is code-capable PyTorch serialization; the runtime verifies the pinned bytes before MMSegmentation loads it, but digest identity is not publisher authentication. Output masks do not include calibrated uncertainty. The two-image tutorial mIoU is execution/evaluation sanity evidence only, not a full ADE20K benchmark reproduction or production validation. The separate adaptation-lineage checkpoint is MIT-licensed under the `SwinTransformer/storage` repository and cleared for hosting; the adaptation capability itself remains scaffolded because it is not implemented in this release.
 
 ###### Primary Intended Uses
 
@@ -83,7 +83,7 @@ The inference API validates that an input path is a readable image with positive
 
 ###### Environment
 
-The qualified task-inference environment is CPython 3.10 with torch 2.1.2, MMSegmentation 1.2.2, MMCV 2.1.0, MMEngine 0.10.7, NumPy 1.26.4, OpenCV 4.10.0.84 and the required MMSegmentation text dependencies. CPU inference is supported and is the path exercised in clean GitHub-hosted notebook execution. The API verifies the pinned OpenMMLab versions at startup and fails closed on drift. Because MMCV and PyTorch rely on platform-specific binary wheels, `pip install .` is not represented as a complete environment bootstrap; the release-grade notebook contains the qualified install sequence. The runtime verifies the 240,154,742-byte checkpoint and SHA-256 `e380ad3e5d94060d89e4b62b5d393cdcc7f1f3406b1d46bcab547d3c276b6064` before deserialization. The future training environment is not qualified: GPU/VRAM requirements, precision policy, container images and repeatability remain open.
+The qualified task-inference environment is CPython 3.11 with torch 2.1.2, MMSegmentation 1.2.2, MMCV 2.1.0, MMEngine 0.10.7, NumPy 1.26.4, OpenCV 4.10.0.84 and the required MMSegmentation text dependencies. CPU inference is supported and is the path exercised in clean GitHub-hosted notebook execution. The API verifies the pinned OpenMMLab versions at startup and fails closed on drift. Because MMCV and PyTorch rely on platform-specific binary wheels, `pip install .` is not represented as a complete environment bootstrap; the release-grade notebook contains the qualified install sequence. The runtime verifies the 240,154,742-byte checkpoint and SHA-256 `e380ad3e5d94060d89e4b62b5d393cdcc7f1f3406b1d46bcab547d3c276b6064` before deserialization. The future training environment is not qualified: GPU/VRAM requirements, precision policy, container images and repeatability remain open.
 
 #### Metrics
 

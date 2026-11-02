@@ -16,13 +16,13 @@ TEMPLATE = {
     "notebook_name": "swin_segmentation_colab.ipynb",
     "profile": "E2E",
     "mode": "GUIDED",
-    # SWS-M1/m4 (NOTEBOOK_SPEC 2.2 §5): the qualified OpenMMLab stack needs CPython 3.10, which pip cannot provide. Section 1
-    # has uv provision a managed CPython 3.10.18, installs the hash lock compiled from tools/pins.txt there
+    # SWS-M1/m4 (NOTEBOOK_SPEC 2.2 §5): the qualified OpenMMLab stack needs CPython 3.11, which pip cannot provide. Section 1
+    # has uv provision a managed CPython 3.11.16, installs the hash lock compiled from tools/pins.txt there
     # (--require-hashes --only-binary :all:, with the PyTorch CPU index and the OpenMMLab find-links page the pins name)
     # and routes every later cell to a persistent worker in it. The kernel's own Python does not matter.
     "isolated_runtime": True,
     "infrastructure_labels": True,
-    "managed_python": "3.10.18",
+    "managed_python": "3.11.16",
     "uv": {
         "version": "0.12.15",
         "url": "https://files.pythonhosted.org/packages/1e/fd/432451d732917c49152a291de3ef171aa6b0f1a22d39780fb2c1f085ca4c/uv-0.12.15-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl",
@@ -54,8 +54,8 @@ TEMPLATE = {
             "https://colab.research.google.com/github/kurtvalcorza/swin-segmentation-pipeline/blob/main/tutorials/swin_segmentation_colab.ipynb",
         ),
         (
-            "Isolated Python 3.10",
-            "https://img.shields.io/badge/Python-3.10%20(isolated%2C%20uv--managed)-3776ab?style=flat&logo=python&logoColor=white",
+            "Isolated Python 3.11",
+            "https://img.shields.io/badge/Python-3.11%20(isolated%2C%20uv--managed)-3776ab?style=flat&logo=python&logoColor=white",
             "https://github.com/kurtvalcorza/swin-segmentation-pipeline/blob/main/README.md",
         ),
         (
@@ -93,7 +93,7 @@ TEMPLATE = {
         "pretrained Swin features add. Section 10 prints that colour baseline beside the network."
     ),
     "learning_objectives": (
-        "install the pinned Python 3.10 OpenMMLab runtime into an isolated environment; read what the carried package guarantees; stage and digest-verify "
+        "install the pinned Python 3.11 OpenMMLab runtime into an isolated environment; read what the carried package guarantees; stage and digest-verify "
         "the immutable OpenMMLab checkpoint; run pretrained inference on an ADE20K demonstration scene; validate a multi-image "
         "segmentation dataset under `core.dataset.vision.raster-mask`; partition into train and validation splits; re-head the "
         "segmentation architecture of a fresh model copy onto a custom 3-class vocabulary; run bounded in-process "
@@ -113,11 +113,11 @@ TEMPLATE = {
             "exported with provenance. No prior experience with MMSegmentation or Swin Transformers is assumed: each term is explained "
             "where it is first needed and again in the glossary below. No GPU is needed. The **Prerequisites** give the details.\n\n"
             "**Running it.** Choose *Run all* (in Colab: *Runtime → Run all*). The default path needs no edit, no upload, no account, no "
-            "token and no runtime restart. Section 1 builds the isolated Python 3.10 environment — the torch, MMCV and MMSegmentation wheels "
+            "token and no runtime restart. Section 1 builds the isolated Python 3.11 environment — the torch, MMCV and MMSegmentation wheels "
             "make it the slowest step — and a second Run all in the same runtime reuses it. You can also run one cell at a time with "
             "*Shift + Enter*.\n\n"
             "**Where the code runs.** The first two code cells run in the notebook kernel: they build the environment and start one "
-            "Python 3.10 process inside it. Every later cell is sent to that process, so the OpenMMLab stack runs on the interpreter its "
+            "Python 3.11 process inside it. Every later cell is sent to that process, so the OpenMMLab stack runs on the interpreter its "
             "wheels were built for, whatever Python the kernel itself has. Printed output and errors come back to the notebook as usual, "
             "and variables persist from cell to cell.\n\n"
             "**Two kinds of cell.** *Infrastructure cells* (Sections 1–3: the isolated install and router, the carried package and the "
@@ -145,7 +145,7 @@ TEMPLATE = {
             "## Roadmap\n\n"
             "| Section | Tag | What happens | What you read |\n"
             "|---|---|---|---|\n"
-            "| 1–3 | [Engineering] | isolated Python 3.10 environment; carried package; checkpoint staged and verified | versions, digests |\n"
+            "| 1–3 | [Engineering] | isolated Python 3.11 environment; carried package; checkpoint staged and verified | versions, digests |\n"
             "| 4. Runtime | [Engineering] | interpreter and library versions asserted | the versions |\n"
             "| 5. Pretrained model | [Concept] | the 150-class model on a demonstration scene (or ADE20K fixtures / your image) | top classes, or mIoU on fixtures |\n"
             "| 6. Dataset | [Evaluation practice] | 24 synthetic scenes (or your dataset) validated | the manifest and a refusal |\n"
@@ -178,12 +178,12 @@ TEMPLATE = {
             "| **`IGNORE_INDEX`** | The mask value `255`: pixels that are not scored or trained on. |\n"
             "| **`.pth` trust boundary** | The checkpoint is a PyTorch pickle that can run code when loaded; the digest check fixes its bytes, not its author. |\n"
             "| **Adapter artifact** | The `.safetensors` file holding the adapted weights as tensors and the class names and provenance as plain JSON metadata; reading it never runs code. |\n"
-            "| **Isolated environment** | A separate Python 3.10 built from the hash-locked pins, in which every learner cell runs. |\n\n"
+            "| **Isolated environment** | A separate Python 3.11 built from the hash-locked pins, in which every learner cell runs. |\n\n"
             "</details>"
         ),
     ],
     "prerequisites": [
-        "- **Runtime:** a fresh **Linux x86_64** runtime; the kernel's own Python version does not matter. The qualified OpenMMLab stack — torch 2.1.2 (CPU build), MMCV 2.1.0, MMEngine 0.10.7, MMSegmentation 1.2.2, NumPy 1.26.4 — has prebuilt wheels for Python 3.10 only, so Section 1 has `uv` provision a managed **CPython 3.10.18**, installs the hash-locked pins there and runs every later cell in that interpreter (Section 4 asserts it). The recorded runtime is a Python 3.10 Jupyter kernel on Linux (GitHub Actions); Google Colab (Python 3.12 kernel) is expected to work the same way but **no Colab run has been recorded yet**. CPU is the default and only qualified path; no GPU is required.",
+        "- **Runtime:** a fresh **Linux x86_64** runtime; the kernel's own Python version does not matter. The qualified OpenMMLab stack — torch 2.1.2 (CPU build), MMCV 2.1.0, MMEngine 0.10.7, MMSegmentation 1.2.2, NumPy 1.26.4 — is qualified on Python 3.11 only (torch 2.1.2 has no wheel above cp311; pillow 13 requires Python 3.11 or newer), so Section 1 has `uv` provision a managed **CPython 3.11.16**, installs the hash-locked pins there and runs every later cell in that interpreter (Section 4 asserts it). The earlier recorded runtime (before the 2026-11 move to CPython 3.11) is a Python 3.10 Jupyter kernel on Linux (GitHub Actions); Google Colab (Python 3.12 kernel) is expected to work the same way but **no Colab run has been recorded yet**. CPU is the default and only qualified path; no GPU is required.",
         "- **External package indexes:** the isolated install reads the PyTorch CPU index (`download.pytorch.org`) and the OpenMMLab wheel page (`download.openmmlab.com`) besides PyPI.",
         "- **Overlap with the training data:** the pinned UPerNet checkpoint was trained on the ADE20K training split after ImageNet-1k "
         "pretraining of the Swin-T backbone [1], [3] (checkpoint name and config). The default adaptation data is drawn in code, so it cannot "
@@ -194,7 +194,7 @@ TEMPLATE = {
         "- **Data:** the default path generates everything deterministically in code by `samples.py` (no dataset download): one 512×384 demonstration scene and a 24-image custom segmentation dataset with exact masks. `USE_ADE20K_FIXTURES` (off) fetches two ADE20K validation images with their annotations from a pinned Hugging Face commit, verified by SHA-256, and scores the pretrained model on them. Two BYOD branches are off by default: `USE_BYOD_IMAGE` (one image, by `BYOD_IMAGE_PATH` or the Colab upload) and `USE_BYOD_DATASET` (a folder or `.zip` with `images/`, `masks/` and `classes.txt`; see Section 6). Do not upload confidential or restricted imagery to a hosted runtime unless you are authorised to process it there; uploads stay in this runtime.",
     ],
     "run_all": (
-        "Selecting **Run all** in a fresh Linux x86_64 runtime builds an isolated environment with a uv-managed CPython 3.10.18 and the "
+        "Selecting **Run all** in a fresh Linux x86_64 runtime builds an isolated environment with a uv-managed CPython 3.11.16 and the "
         "hash-locked pins (the kernel's own Python and packages are left alone, so no restart is needed), stages and digest-verifies the pinned checkpoint, "
         "runs pretrained ADE20K inference on a demonstration scene, validates the 24-image segmentation adaptation dataset, splits it into "
         "train and validation sets, re-heads a fresh copy of the pretrained model, **runs the bounded fine-tune with frozen backbone**, evaluates on "
@@ -217,8 +217,8 @@ TEMPLATE = {
                 "## 4. Confirm the qualified runtime · [Engineering]\n\n"
                 "The carried package fails closed on version drift: `verify_runtime_versions` compares the installed "
                 "`mmseg`, `mmcv` and `mmengine` distributions with the versions pinned in `MODEL_SPEC`, and this cell "
-                "additionally asserts the Python 3.10 interpreter the OpenMMLab wheels were built for — the isolated environment's, "
-                "not the kernel's. Look for a dictionary reporting Python 3.10.x, `torch` 2.1.2+cpu, MMSegmentation 1.2.2, MMCV 2.1.0, "
+                "additionally asserts the Python 3.11 interpreter the OpenMMLab wheels were built for — the isolated environment's, "
+                "not the kernel's. Look for a dictionary reporting Python 3.11.x, `torch` 2.1.2+cpu, MMSegmentation 1.2.2, MMCV 2.1.0, "
                 "MMEngine 0.10.7, 150 classes, the verified checkpoint file name and the `local-snapshot` source."
             ),
             "code": (
@@ -226,8 +226,8 @@ TEMPLATE = {
                 "import sys\n"
                 "import numpy\n"
                 "import torch\n\n"
-                "if sys.version_info[:2] != (3, 10):\n"
-                "    raise RuntimeError(f'Python 3.10 is required by the qualified OpenMMLab runtime (see Prerequisites); this interpreter is {{sys.version.split()[0]}}. Run the Section 1 cells first: they provide a managed Python 3.10 whatever the kernel runs.')\n"
+                "if sys.version_info[:2] != (3, 11):\n"
+                "    raise RuntimeError(f'Python 3.11 is required by the qualified OpenMMLab runtime (see Prerequisites); this interpreter is {{sys.version.split()[0]}}. Run the Section 1 cells first: they provide a managed Python 3.11 whatever the kernel runs.')\n"
                 "print({{'python': platform.python_version(), 'torch': torch.__version__, 'numpy': numpy.__version__, **pipe.versions, 'classes': len(pipe.classes), 'checkpoint': pipe.checkpoint.name, 'source': pipe.source, 'device': pipe.device}})"
             ),
         },
@@ -775,7 +775,7 @@ TEMPLATE = {
         "adaptation numbers do not show what the pretrained features contribute, and they do not represent real-world photographic "
         "scene segmentation. The pretrained 150-class model is measured only when `USE_ADE20K_FIXTURES` is on, on two images.\n\n"
         "Successful execution proves that the recorded repository revision's package, carried in this notebook, can acquire and "
-        "digest-verify the pinned OpenMMLab checkpoint, provision and assert the qualified Python 3.10 runtime in an isolated "
+        "digest-verify the pinned OpenMMLab checkpoint, provision and assert the qualified Python 3.11 runtime in an isolated "
         "environment, validate the dataset contract, re-head a fresh copy of the model, run a bounded fine-tune, evaluate mIoU against "
         "a majority and a colour baseline, export the adapted artifact, and reload it with exact numerical reproducibility — without "
         "the repository being reachable. "
@@ -790,8 +790,8 @@ TEMPLATE = {
         "| Section 1 fails while downloading `uv`, or `The pinned uv wheel failed its size/SHA-256 check` | a network failure, or an altered download | Run the Section 1 install cell again; never edit the digest. |\n"
         "| You want the isolated environment somewhere other than `dimer_isolated_env/` | Section 1 builds it in the working directory by default | Set the environment variable `DIMER_ISOLATED_ENV` to a path before running Section 1. |\n"
         "| `CalledProcessError` from `uv pip install` in Section 1 | the PyTorch CPU index, the OpenMMLab wheel page or PyPI was unreachable | Run the cell again later; never loosen a pin. |\n"
-        "| `holds Python …, not 3.10.18` in Section 1 | an older `dimer_isolated_env/` folder | Delete that folder (or start a fresh runtime) and run the install cell again. |\n"
-        "| `Python 3.10 is required …` in Section 4 | Section 1 was skipped, so the cell ran in the kernel | Run Sections 1–3 first, or choose *Run all*. |\n"
+        "| `holds Python …, not 3.11.16` in Section 1 | an older `dimer_isolated_env/` folder | Delete that folder (or start a fresh runtime) and run the install cell again. |\n"
+        "| `Python 3.11 is required …` in Section 4 | Section 1 was skipped, so the cell ran in the kernel | Run Sections 1–3 first, or choose *Run all*. |\n"
         "| The checkpoint download fails in Section 3, or `sha256 … != manifest` | `download.openmmlab.com` unreachable, or a changed file | Run the Section 3 cell again; a mismatch is never loaded. |\n"
         "| `RuntimeError` about `mmseg`, `mmcv` or `mmengine` versions | runtime-version drift | Delete `dimer_isolated_env/` and run Section 1 again. |\n"
         "| `…: digest … != pinned …; refusing the fixture` in Section 5 | a partial or changed ADE20K fixture download | Delete the file under `sample/` and run the cell again. |\n"

@@ -1,7 +1,7 @@
 # Fleet lint configuration (same rule set as the DIMER exemplar pipelines); kept out of pyproject.toml, which
-# deliberately declares only the package. target-version follows requires-python (3.10).
+# deliberately declares only the package. target-version follows requires-python (3.11).
 line-length = 110
-target-version = "py310"
+target-version = "py311"
 src = ["src", "tests", "tools"]
 
 [lint]

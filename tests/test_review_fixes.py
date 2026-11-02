@@ -64,7 +64,7 @@ def _markdown(notebook: dict) -> str:
 
 def test_sws_M1_first_code_cell_provisions_python_310_before_any_install(notebook: dict) -> None:
     first = _code(notebook)[0]
-    assert "MANAGED_PYTHON = '3.10.18'" in first and '"--managed-python"' in first
+    assert "MANAGED_PYTHON = '3.11.16'" in first and '"--managed-python"' in first
     assert first.index("isolated_version != MANAGED_PYTHON") < first.index('"pip", "install"')
     for path in (NOTEBOOK, ROOT / "README.md", ROOT / "tutorials" / "README.md"):
         text = path.read_text(encoding="utf-8")
@@ -210,7 +210,7 @@ def test_sws_M5_guided_layer_marker_is_present(notebook: dict, marker: str) -> N
 
 def test_sws_M5_infrastructure_cells_are_collapsed(notebook: dict) -> None:
     code = [c for c in notebook["cells"] if c["cell_type"] == "code"]
-    learner_start = next(i for i, c in enumerate(code) if "if sys.version_info[:2] != (3, 10):" in c["source"])
+    learner_start = next(i for i, c in enumerate(code) if "if sys.version_info[:2] != (3, 11):" in c["source"])
     for cell in code[:learner_start]:
         assert cell["metadata"].get("cellView") == "form", cell["source"][:60]
     assert _markdown(notebook).count("**Predict before running:**") >= 5

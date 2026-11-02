@@ -4,6 +4,6 @@ Version: 0.1.0
 Summary: DIMER Swin-T UPerNet semantic-segmentation task-inference runtime
 Author: Kurt Valcorza
 License: MIT
-Requires-Python: <3.11,>=3.10
+Requires-Python: <3.12,>=3.11
 License-File: LICENSE
 Dynamic: license-file
