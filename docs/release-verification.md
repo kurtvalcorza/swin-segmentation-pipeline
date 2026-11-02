@@ -9,7 +9,7 @@ under DIMER Notebook Specification 2.5. This file is the durable release-gate re
 
 `.github/workflows/ci.yml` runs `ruff`, the offline unit suite (`tests/test_snapshot.py`, `tests/test_role_helpers.py`,
 `tests/test_metrics.py`, `tests/test_notebook_parity.py` — OpenMMLab stubbed, the metrics are pure NumPy, no weights, no model),
-`tools/validate_release_assets.py` and `tools/build_notebook.py --check` on Python 3.10. The validator checks:
+`tools/validate_release_assets.py` and `tools/build_notebook.py --check` on Python 3.11. The validator checks:
 
 - notebook JSON parses; every code cell compiles as plain Python (no `%`/`!` magics); no persisted outputs or
   execution counts; no unresolved placeholder markers; every code cell is preceded by an explanatory markdown cell;
@@ -27,7 +27,7 @@ under DIMER Notebook Specification 2.5. This file is the durable release-gate re
   identity string appears in `README.md`, `MODEL_CARD.md`, and `docs/WEIGHTS.md` with no stray revisions;
 - the profile-specific public-API calls (`stage_missing_files`, `verify_snapshot`,
   `DimerSwinSegmenter.from_pretrained(weights_dir=...)`, `validate_inputs`, `predict`, `evaluation_report`),
-  the Python 3.10 assertion, the ceiling print (`MAX_PIXELS`, class count), the pinned ADE20K fixture commit and
+  the Python 3.11 assertion, the ceiling print (`MAX_PIXELS`, class count), the pinned ADE20K fixture commit and
   digests, the exports, the learner-facing statements (no per-pixel confidence, no shipped threshold, the
   `reduce_zero_label` convention, the `.pth` trust boundary, `not-measurable` / `sample-sanity` verdicts) and the
   gated-off `USE_BYOD` / `USE_ADE20K_FIXTURES` defaults listed in the validator; forbidden patterns (credential-in-URL,
@@ -43,7 +43,7 @@ lane gates has no OpenMMLab stack (`mmseg`, `mmcv`, `mmengine` are stubbed in th
 are tested for real), so the package's real loader path is exercised only by a notebook execution.
 
 `.github/workflows/verify-task-tutorial.yml` executes the committed notebook with `nbconvert` on a GitHub-hosted
-Python 3.10 runner from a scratch directory that contains only the notebook (no repository checkout on the notebook's
+Python 3.11 runner from a scratch directory that contains only the notebook (no repository checkout on the notebook's
 path) and asserts the four exports. A green run there is a clean-runtime execution of the default path and is the
 promotion evidence to record below; a red run blocks release.
 
@@ -51,9 +51,9 @@ promotion evidence to record below; a red run blocks release.
 
 | Path | Runtime | Role |
 |---|---|---|
-| GitHub Actions `verify-task-tutorial` (supported clean-room path) | `ubuntu-latest`, `actions/setup-python` 3.10, CPU; `nbconvert` from a scratch directory | The qualified Python 3.10 CPU runtime; a green run is promotion evidence once recorded here with the notebook blob |
-| Jupyter on a CPython 3.10 kernel (user path) | Any Linux host with Python 3.10; CPU | The runtime the tutorial is written for; the notebook asserts the interpreter version |
-| Google Colab | Default Colab runtimes ship Python 3.11+ | **Unsupported**: the OpenMMLab wheels exist for Python 3.10 only and the pinned install fails; the badge is kept for the file location, not as a supported executor |
+| GitHub Actions `verify-task-tutorial` (supported clean-room path) | `ubuntu-latest`, `actions/setup-python` 3.11, CPU; `nbconvert` from a scratch directory | The qualified Python 3.11 CPU runtime; a green run is promotion evidence once recorded here with the notebook blob |
+| Jupyter on a CPython 3.11 kernel (user path) | Any Linux host with Python 3.11; CPU | The runtime the tutorial is written for; the notebook asserts the interpreter version |
+| Google Colab | Default Colab runtimes ship Python 3.11+ | **Unsupported**: the qualified runtime is CPython 3.11 (torch 2.1.2 has no wheel above cp311), so an in-kernel pinned install fails; the badge is kept for the file location, not as a supported executor |
 | Kaggle CLI kernel | Kaggle images ship Python 3.11+ | **Unsupported** for the same reason |
 
 ## Supported release verification procedure
@@ -61,7 +61,7 @@ promotion evidence to record below; a red run blocks release.
 Before changing the registry status from `Candidate` to `Release-grade`:
 
 1. resolve the exact PR/commit head under review and confirm static CI is green;
-2. run that exact notebook revision in a clean CPython 3.10 CPU runtime with **no repository checkout** on the
+2. run that exact notebook revision in a clean CPython 3.11 CPU runtime with **no repository checkout** on the
    notebook's path and a clean `weights/` directory (the `verify-task-tutorial` workflow does this);
 3. run the notebook top-to-bottom without editing implementation cells (form parameters at their defaults for the
    sample path: `USE_BYOD = False`, `USE_ADE20K_FIXTURES = False`);
@@ -77,7 +77,7 @@ Before changing the registry status from `Candidate` to `Release-grade`:
      and written to `weights/swin-t-upernet-ade20k/`, `stage_missing_files(WEIGHTS_DIR, allow_download=True)` reports
      the one manifest entry on a clean runtime, `verify_snapshot` returns the manifest dict, and
      `from_pretrained(weights_dir=WEIGHTS_DIR)` reports `source == 'local-snapshot'`;
-   - Section 4 asserts Python 3.10 and prints `mmseg 1.2.2`, `mmcv 2.1.0`, `mmengine 0.10.7`, 150 classes;
+   - Section 4 asserts Python 3.11 and prints `mmseg 1.2.2`, `mmcv 2.1.0`, `mmengine 0.10.7`, 150 classes;
    - the synthetic 512×384 scene is generated in code with its SHA-256 printed;
    - `validate_inputs` writes `outputs/swin_segmentation_task_inference_input_manifest.json` (verdict `accepted`, one
      recorded rejection finding from the missing-file probe);

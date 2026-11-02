@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "dimer-swin-segmentation"
 version = "0.1.0"
 description = "DIMER Swin-T UPerNet semantic-segmentation task-inference runtime"
-requires-python = ">=3.10,<3.11"
+requires-python = ">=3.11,<3.12"
 license = {text = "MIT"}
 authors = [{name = "Kurt Valcorza"}]
 

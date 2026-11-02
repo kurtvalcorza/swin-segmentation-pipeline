@@ -45,7 +45,7 @@ EXPECTED_OUTPUTS = (
 )
 # Profile-specific code the notebook must exercise through the carried module's public API.
 CODE_MARKERS = (
-    "if sys.version_info[:2] != (3, 10):",
+    "if sys.version_info[:2] != (3, 11):",
     "demo_images = [tutorial_scene()]",
     "pretrained_results = [pipe.predict(image) for image in demo_images]",
     "byod_image_manifest = validate_inputs(demo_image_path)",
@@ -80,7 +80,7 @@ MARKDOWN_MARKERS = (
     "**Trust boundary (MOD12).**",
     "is **not** a `weights_only` load",
     "not publisher authenticity",
-    "managed **CPython 3.10.18**",
+    "managed **CPython 3.11.16**",
     "**no per-pixel confidence**",
     "the package ships no threshold",
     "majority_class_baseline",
@@ -581,12 +581,12 @@ def _validate_parity(path: Path, notebook: dict, code_cells: list[tuple[int, str
 
 def _validate_bootstrap_guard(path: Path, code_cells: list[tuple[int, str, ast.Module]]) -> None:
     """SWS-M1/m4 (RUN1, RUN10, ENV6): nothing is pip-installed into the kernel and no cell asks for a restart. Exactly two
-    kernel cells exist: the isolated install (pinned uv by digest, a uv-managed CPython 3.10 checked by exact version, the
+    kernel cells exist: the isolated install (pinned uv by digest, a uv-managed CPython 3.11 checked by exact version, the
     exact pins) and the router that sends every later cell to the isolated worker."""
     kernel_raw = [source for _index, source, _tree in code_cells if "# dimer: kernel cell" in source]
     _check(len(kernel_raw) == 2, f"{path.name}: exactly two kernel cells (isolated install and router) are expected (SWS-M1)")
     install = next((k for k in kernel_raw if "MANAGED_PYTHON = " in k), "")
-    for needed in ('"--managed-python"', '"--index-strategy"', "UV_SHA256", 'platform.machine() != "x86_64"', "isolated_version != MANAGED_PYTHON", "MANAGED_PYTHON = '3.10."):
+    for needed in ('"--managed-python"', '"--index-strategy"', "UV_SHA256", 'platform.machine() != "x86_64"', "isolated_version != MANAGED_PYTHON", "MANAGED_PYTHON = '3.11."):
         _check(needed in install, f"{path.name}: the isolated install cell must use {needed} (SWS-M1)")
     every = "\n".join(source for _index, source, _tree in code_cells)
     _check("Restart the runtime" not in every, f"{path.name}: no cell may ask for a runtime restart (SWS-m4)")
