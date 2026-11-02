@@ -226,7 +226,7 @@ TEMPLATE = {
                 "import sys\n"
                 "import numpy\n"
                 "import torch\n\n"
-                "if sys.version_info[:2] != (3, 10):\n"
+                "if sys.version_info[:2] != (3, 11):\n"
                 "    raise RuntimeError(f'Python 3.11 is required by the qualified OpenMMLab runtime (see Prerequisites); this interpreter is {{sys.version.split()[0]}}. Run the Section 1 cells first: they provide a managed Python 3.11 whatever the kernel runs.')\n"
                 "print({{'python': platform.python_version(), 'torch': torch.__version__, 'numpy': numpy.__version__, **pipe.versions, 'classes': len(pipe.classes), 'checkpoint': pipe.checkpoint.name, 'source': pipe.source, 'device': pipe.device}})"
             ),
