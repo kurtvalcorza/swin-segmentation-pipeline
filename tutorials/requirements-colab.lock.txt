@@ -698,7 +698,7 @@ mdurl==0.1.2 \
     --hash=sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba
     # via markdown-it-py
 mmcv==2.1.0 \
-    --hash=sha256:953a7ef4bab732a66eb48a57f0884fd0e444e5599582ed81f87289b8e265ad8d
+    --hash=sha256:7ef52b2495ae069d3dcc9f5c3a733ce149fe44000bcbb36d11557f6131674a33
     # via -r tools/pins.txt
 mmengine==0.10.7 \
     --hash=sha256:262ac976a925562f78cd5fd14dd1bc9b680ed0aa81f0d85b723ef782f99c54ee \
