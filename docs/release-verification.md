@@ -135,6 +135,8 @@ evidence for that carrier and for the OpenMMLab inference path, not for the stan
 
 ## Current status
 
+**2026-11-02: runtime moved to CPython 3.11.** The qualified runtime and the notebook's isolated environment now use CPython 3.11 (uv-managed 3.11.16), pillow 13.0.0 and the cp311 MMCV 2.1.0 wheel; every other pin is unchanged. The 3.10.18 / cp310 details below describe the recorded runs and are history. The 3.11 notebook has no recorded Colab run yet, so it stays **Candidate** until one is recorded.
+
 Before the DAT20 refusal fix (paragraph below), the blob was `e4b54e7483386df61dba67b8812737b525073aa7` (PR #19 head `4c97d6e`, tier C review fixes generated at `f21a603`, T87-1..T87-5; markdown, the use notice, `metadata.dimer` and the `NOTEBOOK_SOURCE` record changed). It completed one pass with no restart and 0 errors on a fresh Colab Tesla T4 VM on 2026-10-25 (Colab CLI sequential execution, 18/18 code cells, 921.1 s, CPU execution by design; adapted mIoU 0.914 beside majority 0.184 and colour 0.975, scene 99 mIoU 0.966; `swin-segmentation-adapter-v2.safetensors` reloaded with an exact mask match), covering the default path. Remaining gates: REL12 (a hosted BYOD run with one accepted and one refused input) and REL2 (a browser run of the interactive journeys). Earlier blobs' runs, including the 2026-10-25 run of `86ee573f` (main `f5422aa`), the 2026-10-10 run of `3cce5e9c2ecf`, the 2026-09-24 GitHub Actions run and the PR #17 run of `25c5ed83`, are history (REL14). Static validation
 (`tools/validate_release_assets.py`), nbformat validation, a `compile()` sweep over every code cell, and the offline
 unit suite passed on the tutorial source at the candidate revision, which is necessary but not sufficient. The
